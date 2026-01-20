@@ -21,14 +21,14 @@ sealed class RobotHostApi : IRobotHostApi
         _assets = assets;
     }
 
-    public void Log(BridgeLogLevel level, string message)
+    public void Log(BridgeLogLevel level, BridgeStringView message)
     {
         Commands++;
         Logs++;
         _world.OnLog(level, message);
     }
 
-    public void LoadAsset(ulong requestId, BridgeAssetType assetType, string assetKey)
+    public void LoadAsset(ulong requestId, BridgeAssetType assetType, BridgeStringView assetKey)
     {
         _ = assetType;
 

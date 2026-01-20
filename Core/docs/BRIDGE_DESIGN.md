@@ -24,6 +24,12 @@
 
 禁止跨边界传递 Unity 对象、托管对象、List/Dictionary 等。
 
+### BridgeStringView（UTF-8 ptr+len）
+
+- Core→Host：生成的 Host API 参数保持为 `BridgeStringView`（默认不转 `string`），需要时才 `ToManagedString()`。
+- Host→Core：禁止使用 `BridgeStringView`（指针生命周期仅当帧有效）；请改为传 `handle/hash/id`，或在 Host 侧做 key→handle 映射。
+- 如需做缓存/查找：可用 `BridgeStringView.Fnv1a64()` 计算 key 哈希（无分配），仅在必要时再解码。
+
 ## 数据流
 
 ### Core → Host（命令）
@@ -103,10 +109,10 @@ Host 侧拿到 Core 输出的 `CommandStream` 后，需要把 `CallHost(func_id,
 环境：Windows，Release，bots=1000，frames=300，dt=1/60。
 
 - C#（`--host null`）
-  - `all`：约 14.95M cmd/s，分配 ~208KB
+  - `all`：约 15.01M cmd/s，分配 ~232 bytes
 - C#（`--host full`）
-  - `all`：约 8.64M cmd/s，分配 ~488KB
-- C++ 解析 baseline（仅解析 command stream）：约 40.49M cmd/s
+  - `all`：约 8.01M cmd/s，分配 ~280KB
+- C++ 解析 baseline（仅解析 command stream）：约 40.00M cmd/s
 - Unity（EditMode / Performance Test Framework）
   - `TickAndDispatch_OneFrame(1)`：Avg ~0.01 ms
   - `TickAndDispatch_OneFrame(1000)`：Avg ~0.27 ms

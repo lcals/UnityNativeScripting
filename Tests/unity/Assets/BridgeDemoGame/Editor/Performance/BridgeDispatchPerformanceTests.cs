@@ -20,7 +20,7 @@ namespace BridgeDemoGame.Tests
                 _core = core;
             }
 
-            public void LoadAsset(ulong requestId, BridgeAssetType assetType, string assetKey)
+            public void LoadAsset(ulong requestId, BridgeAssetType assetType, BridgeStringView assetKey)
             {
                 _ = assetType;
                 _ = assetKey;
@@ -47,11 +47,29 @@ namespace BridgeDemoGame.Tests
                 _ = entityId;
             }
 
-            public void Log(BridgeLogLevel level, string message)
+            public void Log(BridgeLogLevel level, BridgeStringView message)
             {
                 _ = level;
                 _ = message;
             }
+        }
+
+        [Test, Performance]
+        [TestCase(1)]
+        [TestCase(1000)]
+        public void EmptyLoop(int bots)
+        {
+            Measure.Method(() =>
+                {
+                    for (int i = 0; i < bots; i++)
+                    {
+                    }
+                })
+                .WarmupCount(5)
+                .MeasurementCount(30)
+                .IterationsPerMeasurement(1)
+                .GC()
+                .Run();
         }
 
         [Test, Performance]

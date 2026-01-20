@@ -48,7 +48,7 @@ namespace Bridge.Bindings
                                 if (payloadSize == (uint)sizeof(DemoAsset.Bindings.HostArgs_LoadAsset))
                                 {
                                     var a = *((DemoAsset.Bindings.HostArgs_LoadAsset*)payloadPtr);
-                                    host.LoadAsset(a.RequestId, a.AssetType, a.AssetKey.ToManagedString());
+                                    host.LoadAsset(a.RequestId, a.AssetType, a.AssetKey);
                                 }
                                 break;
                             }
@@ -84,7 +84,7 @@ namespace Bridge.Bindings
                                 if (payloadSize == (uint)sizeof(DemoLog.Bindings.HostArgs_Log))
                                 {
                                     var a = *((DemoLog.Bindings.HostArgs_Log*)payloadPtr);
-                                    host.Log(a.Level, a.Message.ToManagedString());
+                                    host.Log(a.Level, a.Message);
                                 }
                                 break;
                             }

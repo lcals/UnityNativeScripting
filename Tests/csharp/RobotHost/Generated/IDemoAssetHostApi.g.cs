@@ -8,6 +8,6 @@ namespace DemoAsset.Bindings
 {
     public interface IDemoAssetHostApi
     {
-        void LoadAsset(ulong requestId, BridgeAssetType assetType, string assetKey);
+        void LoadAsset(ulong requestId, BridgeAssetType assetType, BridgeStringView assetKey);
     }
 }

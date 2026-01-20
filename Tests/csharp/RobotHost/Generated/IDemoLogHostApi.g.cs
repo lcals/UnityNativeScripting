@@ -8,6 +8,6 @@ namespace DemoLog.Bindings
 {
     public interface IDemoLogHostApi
     {
-        void Log(BridgeLogLevel level, string message);
+        void Log(BridgeLogLevel level, BridgeStringView message);
     }
 }

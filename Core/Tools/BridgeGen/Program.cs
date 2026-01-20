@@ -702,7 +702,7 @@ static class Program
         {
             return cppType switch
             {
-                "BridgeStringView" => "string",
+                "BridgeStringView" => "BridgeStringView",
                 "BridgeLogLevel" => "BridgeLogLevel",
                 "BridgeAssetType" => "BridgeAssetType",
                 "BridgeAssetStatus" => "BridgeAssetStatus",
@@ -715,6 +715,8 @@ static class Program
 
         private static string MapCsCoreCallArgType(string cppType)
         {
+            if (cppType == "BridgeStringView")
+                throw new InvalidOperationException("Core API（Host->Core）禁止使用 BridgeStringView；请改为传 handle/hash/id。");
             return MapCsHostArgType(cppType);
         }
 
@@ -722,7 +724,6 @@ static class Program
         {
             return cppType switch
             {
-                "BridgeStringView" => $"{fieldExpr}.ToManagedString()",
                 _ => fieldExpr
             };
         }

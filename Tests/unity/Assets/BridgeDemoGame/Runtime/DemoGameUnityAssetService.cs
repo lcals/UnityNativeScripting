@@ -9,6 +9,7 @@ namespace BridgeDemoGame
 {
     public sealed class DemoGameUnityAssetService : MonoBehaviour
     {
+        private readonly Dictionary<ulong, string> _assetKeyIntern = new Dictionary<ulong, string>();
         private readonly Dictionary<string, PendingAssetLoad> _pending = new Dictionary<string, PendingAssetLoad>(StringComparer.Ordinal);
         private readonly Dictionary<string, ulong> _assetKeyToHandle = new Dictionary<string, ulong>(StringComparer.Ordinal);
         private readonly Dictionary<ulong, TextAsset> _handleToAsset = new Dictionary<ulong, TextAsset>();
@@ -18,7 +19,7 @@ namespace BridgeDemoGame
             return _handleToAsset.TryGetValue(handle, out asset);
         }
 
-        public void RequestLoad(BridgeCore core, ulong requestId, BridgeAssetType assetType, string assetKey)
+        public void RequestLoad(BridgeCore core, ulong requestId, BridgeAssetType assetType, BridgeStringView assetKey)
         {
             if (core == null)
                 return;
@@ -29,28 +30,41 @@ namespace BridgeDemoGame
                 return;
             }
 
-            if (string.IsNullOrEmpty(assetKey))
+            if (assetKey.Ptr == 0 || assetKey.Len == 0)
             {
                 core.AssetLoaded(requestId, 0, BridgeAssetStatus.NotFound);
                 return;
             }
 
-            if (_assetKeyToHandle.TryGetValue(assetKey, out ulong cachedHandle) && cachedHandle != 0)
+            string key = InternKey(assetKey);
+            if (_assetKeyToHandle.TryGetValue(key, out ulong cachedHandle) && cachedHandle != 0)
             {
                 core.AssetLoaded(requestId, cachedHandle, BridgeAssetStatus.Ok);
                 return;
             }
 
-            if (_pending.TryGetValue(assetKey, out PendingAssetLoad pending))
+            if (_pending.TryGetValue(key, out PendingAssetLoad pending))
             {
                 pending.Waiters.Add(new PendingRequest(core, requestId));
                 return;
             }
 
-            pending = new PendingAssetLoad(assetKey);
+            pending = new PendingAssetLoad(key);
             pending.Waiters.Add(new PendingRequest(core, requestId));
-            _pending.Add(assetKey, pending);
+            _pending.Add(key, pending);
             StartCoroutine(LoadCoroutine(pending));
+        }
+
+        private string InternKey(BridgeStringView key)
+        {
+            ulong hash = key.Fnv1a64();
+            if (hash != 0 && _assetKeyIntern.TryGetValue(hash, out string cached) && !string.IsNullOrEmpty(cached))
+                return cached;
+
+            string s = key.ToManagedString();
+            if (hash != 0 && !string.IsNullOrEmpty(s))
+                _assetKeyIntern[hash] = s;
+            return s;
         }
 
         private IEnumerator LoadCoroutine(PendingAssetLoad pending)

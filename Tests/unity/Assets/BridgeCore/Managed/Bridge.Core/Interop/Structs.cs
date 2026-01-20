@@ -47,6 +47,24 @@ namespace Bridge.Core
             // netstandard2.1+ 支持按长度读取 UTF-8，避免额外分配 byte[]。
             return Marshal.PtrToStringUTF8(new IntPtr(unchecked((long)Ptr)), (int)Len) ?? string.Empty;
         }
+
+        public unsafe ulong Fnv1a64()
+        {
+            if (Ptr == 0 || Len == 0)
+                return 0;
+
+            const ulong offset = 1469598103934665603ul;
+            const ulong prime = 1099511628211ul;
+
+            ulong hash = offset;
+            byte* p = (byte*)Ptr;
+            for (uint i = 0; i < Len; i++)
+            {
+                hash ^= p[i];
+                hash *= prime;
+            }
+            return hash;
+        }
     }
 
     public enum BridgeLogLevel : uint

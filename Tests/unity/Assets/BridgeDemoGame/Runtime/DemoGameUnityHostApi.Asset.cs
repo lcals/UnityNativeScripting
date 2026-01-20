@@ -5,7 +5,7 @@ namespace BridgeDemoGame
 {
     public sealed partial class DemoGameUnityHostApi : IDemoAssetHostApi
     {
-        public void LoadAsset(ulong requestId, BridgeAssetType assetType, string assetKey)
+        public void LoadAsset(ulong requestId, BridgeAssetType assetType, BridgeStringView assetKey)
         {
             Commands++;
             AssetRequests++;

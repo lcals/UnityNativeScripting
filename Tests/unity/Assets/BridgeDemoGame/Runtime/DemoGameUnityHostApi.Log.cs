@@ -6,27 +6,30 @@ namespace BridgeDemoGame
 {
     public sealed partial class DemoGameUnityHostApi: IDemoLogHostApi
     {
-        public void Log(BridgeLogLevel level, string message)
+        public void Log(BridgeLogLevel level, BridgeStringView message)
         {
             Commands++;
             Logs++;
 
+            if (!_enableRendering)
+                return;
+
+            string msg = message.ToManagedString();
             switch (level)
             {
                 case BridgeLogLevel.Debug:
-                    Debug.Log(message);
+                    Debug.Log(msg);
                     break;
                 case BridgeLogLevel.Info:
-                    Debug.Log(message);
+                    Debug.Log(msg);
                     break;
                 case BridgeLogLevel.Warn:
-                    Debug.LogWarning(message);
+                    Debug.LogWarning(msg);
                     break;
                 default:
-                    Debug.LogError(message);
+                    Debug.LogError(msg);
                     break;
             }
         }
     }
 }
-

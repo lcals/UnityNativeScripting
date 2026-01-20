@@ -4,7 +4,6 @@ using DemoAsset.Bindings;
 sealed class RobotNullHostApi : IRobotHostApi
 {
     private readonly BridgeCore _core;
-    private readonly FileAssetProvider _assets;
 
     public ulong Commands { get; private set; }
     public ulong AssetRequests { get; private set; }
@@ -16,10 +15,10 @@ sealed class RobotNullHostApi : IRobotHostApi
     public RobotNullHostApi(BridgeCore core, FileAssetProvider assets)
     {
         _core = core;
-        _assets = assets;
+        _ = assets;
     }
 
-    public void Log(BridgeLogLevel level, string message)
+    public void Log(BridgeLogLevel level, BridgeStringView message)
     {
         _ = level;
         _ = message;
@@ -27,17 +26,17 @@ sealed class RobotNullHostApi : IRobotHostApi
         Logs++;
     }
 
-    public void LoadAsset(ulong requestId, BridgeAssetType assetType, string assetKey)
+    public void LoadAsset(ulong requestId, BridgeAssetType assetType, BridgeStringView assetKey)
     {
         _ = assetType;
 
         Commands++;
         AssetRequests++;
 
-        if (_assets.TryGetHandle(assetKey, out ulong handle))
-            _core.AssetLoaded(requestId, handle, BridgeAssetStatus.Ok);
-        else
-            _core.AssetLoaded(requestId, 0, BridgeAssetStatus.NotFound);
+        ulong handle = assetKey.Fnv1a64();
+        if (handle == 0)
+            handle = 1;
+        _core.AssetLoaded(requestId, handle, BridgeAssetStatus.Ok);
     }
 
     public void SpawnEntity(ulong entityId, ulong prefabHandle, BridgeTransform transform, uint flags)

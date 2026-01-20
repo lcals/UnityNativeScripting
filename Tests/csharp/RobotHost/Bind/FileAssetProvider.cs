@@ -1,9 +1,11 @@
 using System.Collections.Generic;
+using Bridge.Core;
 
 sealed class FileAssetProvider
 {
     private readonly string _root;
     private readonly Dictionary<string, ulong> _handleCache = new(StringComparer.Ordinal);
+    private readonly Dictionary<ulong, ulong> _handleCacheByKeyHash = new();
 
     public FileAssetProvider(string root)
     {
@@ -29,6 +31,21 @@ sealed class FileAssetProvider
 
         _handleCache[assetKey] = handle;
         return true;
+    }
+
+    public bool TryGetHandle(BridgeStringView assetKey, out ulong handle)
+    {
+        ulong keyHash = assetKey.Fnv1a64();
+        if (keyHash != 0 && _handleCacheByKeyHash.TryGetValue(keyHash, out handle))
+            return handle != 0;
+
+        string key = assetKey.ToManagedString();
+        bool ok = TryGetHandle(key, out handle);
+
+        if (keyHash != 0)
+            _handleCacheByKeyHash[keyHash] = ok ? handle : 0;
+
+        return ok;
     }
 
     private string? ResolvePath(string assetKey)
@@ -65,4 +82,3 @@ sealed class FileAssetProvider
         return hash;
     }
 }
-

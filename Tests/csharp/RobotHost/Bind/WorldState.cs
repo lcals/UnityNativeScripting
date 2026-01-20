@@ -5,7 +5,7 @@ sealed class WorldState
 {
     private readonly Dictionary<ulong, Entity> _entities = new();
 
-    public void OnLog(BridgeLogLevel level, string message)
+    public void OnLog(BridgeLogLevel level, BridgeStringView message)
     {
         _ = level;
         _ = message;
@@ -46,4 +46,3 @@ sealed class WorldState
         }
     }
 }
-
