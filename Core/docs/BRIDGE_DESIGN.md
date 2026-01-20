@@ -116,6 +116,7 @@ Host 侧拿到 Core 输出的 `CommandStream` 后，需要把 `CallHost(func_id,
 - Unity（EditMode / Performance Test Framework）
   - `TickAndDispatch_OneFrame(1)`：Avg ~0.01 ms
   - `TickAndDispatch_OneFrame(1000)`：Avg ~0.27 ms
+  - `GC.Alloc.Bytes`：Avg = 0 b（基于 `GC.GetAllocatedBytesForCurrentThread()` 的自定义指标）
 
 对应命令：
 

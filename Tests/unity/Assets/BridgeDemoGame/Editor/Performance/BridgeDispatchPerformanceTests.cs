@@ -11,6 +11,8 @@ namespace BridgeDemoGame.Tests
 {
     public sealed class BridgeDispatchPerformanceTests
     {
+        private static readonly SampleGroup AllocatedBytes = new SampleGroup("GC.Alloc.Bytes", SampleUnit.Byte, false);
+
         private sealed class NullHostApi : IDemoAssetHostApi, IDemoEntityHostApi, IDemoLogHostApi
         {
             private readonly BridgeCore _core;
@@ -59,16 +61,23 @@ namespace BridgeDemoGame.Tests
         [TestCase(1000)]
         public void EmptyLoop(int bots)
         {
+            long allocBefore = 0;
+
             Measure.Method(() =>
                 {
                     for (int i = 0; i < bots; i++)
                     {
                     }
                 })
+                .SetUp(() => allocBefore = System.GC.GetAllocatedBytesForCurrentThread())
+                .CleanUp(() =>
+                {
+                    long allocAfter = System.GC.GetAllocatedBytesForCurrentThread();
+                    Measure.Custom(AllocatedBytes, allocAfter - allocBefore);
+                })
                 .WarmupCount(5)
                 .MeasurementCount(30)
                 .IterationsPerMeasurement(1)
-                .GC()
                 .Run();
         }
 
@@ -93,6 +102,7 @@ namespace BridgeDemoGame.Tests
             }
 
             const float dt = 1.0f / 60.0f;
+            long allocBefore = 0;
 
             try
             {
@@ -106,10 +116,15 @@ namespace BridgeDemoGame.Tests
                             BridgeAllCommandDispatcher.Dispatch(stream, hosts[i]);
                         }
                     })
+                    .SetUp(() => allocBefore = System.GC.GetAllocatedBytesForCurrentThread())
+                    .CleanUp(() =>
+                    {
+                        long allocAfter = System.GC.GetAllocatedBytesForCurrentThread();
+                        Measure.Custom(AllocatedBytes, allocAfter - allocBefore);
+                    })
                     .WarmupCount(5)
                     .MeasurementCount(30)
                     .IterationsPerMeasurement(1)
-                    .GC()
                     .Run();
             }
             finally
