@@ -111,7 +111,7 @@ Host 侧拿到 Core 输出的 `CommandStream` 后，需要把 `CallHost(func_id,
 - C#（`--host null`）
   - `all`：约 15.01M cmd/s，分配 ~232 bytes
 - C#（`--host full`）
-  - `all`：约 8.01M cmd/s，分配 ~280KB
+  - `all`：约 8.26M cmd/s，分配 ~512 bytes（示例 WorldState 预分配避免运行期扩容）
 - C++ 解析 baseline（仅解析 command stream）：约 40.00M cmd/s
 - Unity（EditMode / Performance Test Framework）
   - `TickAndDispatch_OneFrame(1)`：Avg ~0.01 ms

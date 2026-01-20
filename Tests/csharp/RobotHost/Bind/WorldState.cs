@@ -3,7 +3,7 @@ using Bridge.Core;
 
 sealed class WorldState
 {
-    private readonly Dictionary<ulong, Entity> _entities = new();
+    private readonly Dictionary<ulong, Entity> _entities = new(capacity: 4);
 
     public void OnLog(BridgeLogLevel level, BridgeStringView message)
     {
