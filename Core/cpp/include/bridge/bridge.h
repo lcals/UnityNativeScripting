@@ -184,6 +184,16 @@ BRIDGE_API BridgeResult BRIDGE_CALL BridgeCore_TickAndGetCommandStream(
   const void** out_ptr,
   uint32_t* out_len);
 
+// 批量 Tick + 获取 command streams（机器人/压测用）。
+// - cores / out_ptrs / out_lens 均为长度为 count 的数组指针。
+// - 成功返回后：out_ptrs[i] / out_lens[i] 为 cores[i] 本帧的 stream。
+BRIDGE_API BridgeResult BRIDGE_CALL BridgeCore_TickManyAndGetCommandStreams(
+  BridgeCore** cores,
+  uint32_t count,
+  float dt,
+  const void** out_ptrs,
+  uint32_t* out_lens);
+
 // 返回最近一次 BridgeCore_Tick 生成的 command stream（连续字节流）指针。
 // 返回的内存由 Core 持有，只保证在下一次 BridgeCore_Tick（或 BridgeCore_Destroy）前有效。
 BRIDGE_API BridgeResult BRIDGE_CALL BridgeCore_GetCommandStream(

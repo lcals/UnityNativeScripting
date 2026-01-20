@@ -47,6 +47,34 @@ BridgeResult BRIDGE_CALL BridgeCore_TickAndGetCommandStream(
 	return bridge::GetCommandStream(*core, out_ptr, out_len);
 }
 
+BridgeResult BRIDGE_CALL BridgeCore_TickManyAndGetCommandStreams(
+	BridgeCore** cores,
+	uint32_t count,
+	float dt,
+	const void** out_ptrs,
+	uint32_t* out_lens)
+{
+	if (!cores || count == 0 || !out_ptrs || !out_lens)
+	{
+		return BRIDGE_INVALID_ARGUMENT;
+	}
+
+	for (uint32_t i = 0; i < count; i++)
+	{
+		auto* core = cores[i];
+		if (!core)
+		{
+			out_ptrs[i] = nullptr;
+			out_lens[i] = 0;
+			continue;
+		}
+
+		bridge::Tick(*core, dt);
+		(void)bridge::GetCommandStream(*core, &out_ptrs[i], &out_lens[i]);
+	}
+	return BRIDGE_OK;
+}
+
 BridgeResult BRIDGE_CALL BridgeCore_GetCommandStream(
 	const BridgeCore* core,
 	const void** out_ptr,

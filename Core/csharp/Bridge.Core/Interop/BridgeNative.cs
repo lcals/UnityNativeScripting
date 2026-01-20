@@ -27,6 +27,14 @@ namespace Bridge.Core
             out uint len);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern unsafe BridgeResult BridgeCore_TickManyAndGetCommandStreams(
+            IntPtr* cores,
+            uint count,
+            float dt,
+            IntPtr* outPtrs,
+            uint* outLens);
+
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern BridgeResult BridgeCore_GetCommandStream(
             IntPtr core,
             out IntPtr ptr,

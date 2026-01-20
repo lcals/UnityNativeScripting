@@ -44,6 +44,42 @@ namespace Bridge.Core
             return new CommandStream(ptr, len);
         }
 
+        public static unsafe void TickManyAndGetCommandStreams(BridgeCore[] cores, float dt, CommandStream[] streams)
+        {
+            if (cores == null)
+                throw new ArgumentNullException(nameof(cores));
+            if (streams == null)
+                throw new ArgumentNullException(nameof(streams));
+            if (streams.Length < cores.Length)
+                throw new ArgumentException("streams.Length must be >= cores.Length", nameof(streams));
+
+            int count = cores.Length;
+            if (count == 0)
+                return;
+
+            IntPtr* corePtrs = stackalloc IntPtr[count];
+            for (int i = 0; i < count; i++)
+            {
+                BridgeCore core = cores[i] ?? throw new ArgumentNullException(nameof(cores), $"cores[{i}] is null");
+                core.ThrowIfDisposed();
+                corePtrs[i] = core._handle;
+            }
+
+            IntPtr* outPtrs = stackalloc IntPtr[count];
+            uint* outLens = stackalloc uint[count];
+
+            var result = BridgeNative.BridgeCore_TickManyAndGetCommandStreams(corePtrs, (uint)count, dt, outPtrs, outLens);
+            if (result != BridgeResult.Ok)
+                throw new InvalidOperationException($"BridgeCore_TickManyAndGetCommandStreams failed: {result}");
+
+            for (int i = 0; i < count; i++)
+            {
+                IntPtr ptr = outPtrs[i];
+                uint len = outLens[i];
+                streams[i] = (ptr == IntPtr.Zero || len == 0) ? CommandStream.Empty : new CommandStream(ptr, len);
+            }
+        }
+
         /// <summary>
         /// 获取最近一次 <see cref="Tick"/> 生成的命令字节流（command stream）。
         /// </summary>

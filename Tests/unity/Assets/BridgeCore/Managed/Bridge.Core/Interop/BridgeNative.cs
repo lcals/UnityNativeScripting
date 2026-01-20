@@ -29,6 +29,14 @@ namespace Bridge.Core
         private delegate BridgeResult BridgeCore_TickAndGetCommandStreamDelegate(IntPtr core, float dt, out IntPtr ptr, out uint len);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private unsafe delegate BridgeResult BridgeCore_TickManyAndGetCommandStreamsDelegate(
+            IntPtr* cores,
+            uint count,
+            float dt,
+            IntPtr* outPtrs,
+            uint* outLens);
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private delegate BridgeResult BridgeCore_GetCommandStreamDelegate(IntPtr core, out IntPtr ptr, out uint len);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
@@ -40,6 +48,7 @@ namespace Bridge.Core
         private static BridgeCore_DestroyDelegate s_destroy;
         private static BridgeCore_TickDelegate s_tick;
         private static BridgeCore_TickAndGetCommandStreamDelegate s_tickAndGetCommandStream;
+        private static BridgeCore_TickManyAndGetCommandStreamsDelegate s_tickManyAndGetCommandStreams;
         private static BridgeCore_GetCommandStreamDelegate s_getCommandStream;
         private static BridgeCore_PushCallCoreDelegate s_pushCallCore;
 
@@ -59,6 +68,7 @@ namespace Bridge.Core
             s_destroy = GetDelegate<BridgeCore_DestroyDelegate>(module, "BridgeCore_Destroy");
             s_tick = GetDelegate<BridgeCore_TickDelegate>(module, "BridgeCore_Tick");
             s_tickAndGetCommandStream = GetDelegate<BridgeCore_TickAndGetCommandStreamDelegate>(module, "BridgeCore_TickAndGetCommandStream");
+            s_tickManyAndGetCommandStreams = GetDelegate<BridgeCore_TickManyAndGetCommandStreamsDelegate>(module, "BridgeCore_TickManyAndGetCommandStreams");
             s_getCommandStream = GetDelegate<BridgeCore_GetCommandStreamDelegate>(module, "BridgeCore_GetCommandStream");
             s_pushCallCore = GetDelegate<BridgeCore_PushCallCoreDelegate>(module, "BridgeCore_PushCallCore");
             s_boundModule = module;
@@ -103,6 +113,17 @@ namespace Bridge.Core
             return s_tickAndGetCommandStream(core, dt, out ptr, out len);
         }
 
+        internal static unsafe BridgeResult BridgeCore_TickManyAndGetCommandStreams(
+            IntPtr* cores,
+            uint count,
+            float dt,
+            IntPtr* outPtrs,
+            uint* outLens)
+        {
+            EnsureBound();
+            return s_tickManyAndGetCommandStreams(cores, count, dt, outPtrs, outLens);
+        }
+
         internal static BridgeResult BridgeCore_GetCommandStream(IntPtr core, out IntPtr ptr, out uint len)
         {
             EnsureBound();
@@ -135,6 +156,14 @@ namespace Bridge.Core
             float dt,
             out IntPtr ptr,
             out uint len);
+
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern unsafe BridgeResult BridgeCore_TickManyAndGetCommandStreams(
+            IntPtr* cores,
+            uint count,
+            float dt,
+            IntPtr* outPtrs,
+            uint* outLens);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern BridgeResult BridgeCore_GetCommandStream(

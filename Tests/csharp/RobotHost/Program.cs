@@ -106,6 +106,8 @@ static class Program
                 hosts[i] = new RobotNullHostApi(core, assetProvider);
             }
 
+            var streams = new CommandStream[bots];
+
             long allocBefore = GC.GetAllocatedBytesForCurrentThread();
             var sw = Stopwatch.StartNew();
 
@@ -113,12 +115,9 @@ static class Program
             {
                 for (int frame = 0; frame < frames; frame++)
                 {
+                    BridgeCore.TickManyAndGetCommandStreams(cores, dt, streams);
                     for (int i = 0; i < cores.Length; i++)
-                    {
-                        var core = cores[i];
-                        var stream = core.TickAndGetCommandStream(dt);
-                        BridgeAllCommandDispatcher.Dispatch(stream, hosts[i]);
-                    }
+                        BridgeAllCommandDispatcher.Dispatch(streams[i], hosts[i]);
                 }
             }
             finally
@@ -169,6 +168,8 @@ static class Program
                 hosts[i] = new RobotHostApi(core, world, assetProvider);
             }
 
+            var streams = new CommandStream[bots];
+
             long allocBefore = GC.GetAllocatedBytesForCurrentThread();
             var sw = Stopwatch.StartNew();
 
@@ -176,12 +177,9 @@ static class Program
             {
                 for (int frame = 0; frame < frames; frame++)
                 {
+                    BridgeCore.TickManyAndGetCommandStreams(cores, dt, streams);
                     for (int i = 0; i < cores.Length; i++)
-                    {
-                        var core = cores[i];
-                        var stream = core.TickAndGetCommandStream(dt);
-                        BridgeAllCommandDispatcher.Dispatch(stream, hosts[i]);
-                    }
+                        BridgeAllCommandDispatcher.Dispatch(streams[i], hosts[i]);
                 }
             }
             finally
