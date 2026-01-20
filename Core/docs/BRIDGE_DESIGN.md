@@ -103,15 +103,16 @@ Host 侧拿到 Core 输出的 `CommandStream` 后，需要把 `CallHost(func_id,
 
 - 分发器使用 `unsafe` + `sizeof(T)` + 指针解引用读取 payload，避免 `Marshal.PtrToStructure` 的反射与分配。
 - Host→Core 的 `PushCallCore<T>(payload)` 使用 `unmanaged` 泛型直接传栈上数据指针，避免 `AllocHGlobal`。
+- 为减少 Host 侧 native 调用次数：提供 `BridgeCore_TickAndGetCommandStream` 与 `BridgeCore_TickManyAndGetCommandStreams`。
 
 ### 基准结果（示例）
 
 环境：Windows，Release，bots=1000，frames=300，dt=1/60。
 
 - C#（`--host null`）
-  - `all`：约 15.01M cmd/s，分配 ~232 bytes
+  - `all`：约 17.17M cmd/s，分配 ~184 bytes
 - C#（`--host full`）
-  - `all`：约 8.26M cmd/s，分配 ~512 bytes（示例 WorldState 预分配避免运行期扩容）
+  - `all`：约 8.93M cmd/s，分配 ~464 bytes（示例 WorldState 预分配避免运行期扩容）
 - C++ 解析 baseline（仅解析 command stream）：约 40.00M cmd/s
 - Unity（EditMode / Performance Test Framework）
   - `TickAndDispatch_OneFrame(1)`：Avg ~0.01 ms
