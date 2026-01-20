@@ -1,0 +1,8 @@
+// DemoLog 模块：日志输出（Core -> Host）
+//
+// 约定：
+// - BRIDGE_HOST_API：由 Host（C# / Unity）实现，Core 通过 command stream 调用
+// - BRIDGE_CORE_API：由 Core（C++）实现，Host 通过 PushCallCore 调用
+
+BRIDGE_HOST_API(Log, BridgeLogLevel level, BridgeStringView message)
+

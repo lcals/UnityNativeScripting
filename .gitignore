@@ -2,4 +2,14 @@
 .idea
 
 # Unity upgrade logs
-Unity/Logs
+Tests/unity/Logs
+
+# Build outputs
+build/
+Core/**/bin/
+Core/**/obj/
+Core/**/build/
+Tests/**/bin/
+Tests/**/obj/
+Tests/**/build/
+Tests/unity/UserSettings

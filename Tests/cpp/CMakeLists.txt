@@ -1,0 +1,2 @@
+add_subdirectory(demo_game)
+add_subdirectory(robot_runner)

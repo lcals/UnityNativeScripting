@@ -1,0 +1,15 @@
+{
+  "name": "BridgeDemoGame.PerformanceTests",
+  "references": [
+    "Bridge.Core",
+    "Bridge.Core.Unity",
+    "BridgeDemoGame.Generated",
+    "Unity.PerformanceTesting"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}

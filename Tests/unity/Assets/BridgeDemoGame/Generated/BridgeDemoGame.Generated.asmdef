@@ -1,0 +1,7 @@
+{
+  "name": "BridgeDemoGame.Generated",
+  "references": [
+    "Bridge.Core"
+  ],
+  "allowUnsafeCode": true
+}

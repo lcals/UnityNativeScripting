@@ -1,0 +1,7 @@
+{
+  "name": "Bridge.Core",
+  "references": [
+    "Bridge.Core.Unity"
+  ],
+  "allowUnsafeCode": true
+}

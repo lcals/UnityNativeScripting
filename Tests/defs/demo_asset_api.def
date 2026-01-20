@@ -1,0 +1,6 @@
+// DemoAsset 模块：资源加载（Core 发起，Host 用引擎/文件系统实现）
+
+BRIDGE_HOST_API(LoadAsset, uint64_t requestId, BridgeAssetType assetType, BridgeStringView assetKey)
+
+BRIDGE_CORE_API(AssetLoaded, uint64_t requestId, uint64_t handle, BridgeAssetStatus status)
+
