@@ -17,6 +17,7 @@ namespace BridgeDemoGame
 
         private BridgeCore[] _cores = Array.Empty<BridgeCore>();
         private DemoGameUnityHostApi[] _hosts = Array.Empty<DemoGameUnityHostApi>();
+        private CommandStream[] _streams = Array.Empty<CommandStream>();
         private DemoGameUnityAssetService _assets;
 
         private void Awake()
@@ -31,6 +32,7 @@ namespace BridgeDemoGame
             int bots = Mathf.Max(1, Bots);
             _cores = new BridgeCore[bots];
             _hosts = new DemoGameUnityHostApi[bots];
+            _streams = new CommandStream[bots];
 
             bool render = EnableRendering && bots <= MaxBotsWithRendering;
             for (int i = 0; i < bots; i++)
@@ -44,12 +46,9 @@ namespace BridgeDemoGame
         private void Update()
         {
             float dt = Time.deltaTime;
+            BridgeCore.TickManyAndGetCommandStreams(_cores, dt, _streams);
             for (int i = 0; i < _cores.Length; i++)
-            {
-                BridgeCore core = _cores[i];
-                CommandStream stream = core.TickAndGetCommandStream(dt);
-                BridgeAllCommandDispatcher.Dispatch(stream, _hosts[i]);
-            }
+                BridgeAllCommandDispatcher.Dispatch(_streams[i], _hosts[i]);
         }
 
         private void OnDestroy()
@@ -60,6 +59,7 @@ namespace BridgeDemoGame
             }
             _cores = Array.Empty<BridgeCore>();
             _hosts = Array.Empty<DemoGameUnityHostApi>();
+            _streams = Array.Empty<CommandStream>();
         }
     }
 }
