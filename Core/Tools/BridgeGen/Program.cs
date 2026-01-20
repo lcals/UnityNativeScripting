@@ -497,15 +497,13 @@ static class Program
             sb.AppendLine();
             sb.AppendLine("            while (cursor < end)");
             sb.AppendLine("            {");
-            sb.AppendLine("                long remaining = end - cursor;");
-            sb.AppendLine("                if (remaining < sizeof(BridgeCommandHeader))");
+            sb.AppendLine("                int remaining = (int)(end - cursor);");
+            sb.AppendLine("                if (remaining < (int)sizeof(BridgeCommandHeader))");
             sb.AppendLine("                    break;");
             sb.AppendLine();
             sb.AppendLine("                var header = (BridgeCommandHeader*)cursor;");
             sb.AppendLine("                int size = header->Size;");
-            sb.AppendLine("                if (size <= 0)");
-            sb.AppendLine("                    break;");
-            sb.AppendLine("                if (size < sizeof(BridgeCommandHeader) || size > remaining)");
+            sb.AppendLine("                if ((uint)size < (uint)sizeof(BridgeCommandHeader) || (uint)size > (uint)remaining)");
             sb.AppendLine("                    break;");
             sb.AppendLine();
             sb.AppendLine("                if (header->Type == (ushort)BridgeCommandType.CallHost && size >= sizeof(BridgeCmdCallHost))");

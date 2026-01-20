@@ -33,6 +33,20 @@ void BRIDGE_CALL BridgeCore_Tick(BridgeCore* core, float dt)
 	bridge::Tick(*core, dt);
 }
 
+BridgeResult BRIDGE_CALL BridgeCore_TickAndGetCommandStream(
+	BridgeCore* core,
+	float dt,
+	const void** out_ptr,
+	uint32_t* out_len)
+{
+	if (!core)
+	{
+		return BRIDGE_INVALID_ARGUMENT;
+	}
+	bridge::Tick(*core, dt);
+	return bridge::GetCommandStream(*core, out_ptr, out_len);
+}
+
 BridgeResult BRIDGE_CALL BridgeCore_GetCommandStream(
 	const BridgeCore* core,
 	const void** out_ptr,

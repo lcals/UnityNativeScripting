@@ -47,9 +47,7 @@ namespace BridgeDemoGame
             for (int i = 0; i < _cores.Length; i++)
             {
                 BridgeCore core = _cores[i];
-                core.Tick(dt);
-
-                CommandStream stream = core.GetCommandStream();
+                CommandStream stream = core.TickAndGetCommandStream(dt);
                 BridgeAllCommandDispatcher.Dispatch(stream, _hosts[i]);
             }
         }

@@ -111,8 +111,7 @@ namespace BridgeDemoGame.Tests
                         for (int i = 0; i < bots; i++)
                         {
                             var core = cores[i];
-                            core.Tick(dt);
-                            var stream = core.GetCommandStream();
+                            var stream = core.TickAndGetCommandStream(dt);
                             BridgeAllCommandDispatcher.Dispatch(stream, hosts[i]);
                         }
                     })

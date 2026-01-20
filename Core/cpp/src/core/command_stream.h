@@ -67,5 +67,6 @@ namespace bridge
 	private:
 		std::vector<uint8_t> bytes_;
 		std::vector<std::unique_ptr<std::string>> strings_;
+		size_t strings_used_ = 0;
 	};
 }

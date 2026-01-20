@@ -29,7 +29,7 @@ namespace BridgeDemoGame
             _enableRendering = enableRendering;
         }
 
-        private static void ApplyTransform(Transform t, BridgeTransform transform, uint mask)
+        private static void ApplyTransform(Transform t, in BridgeTransform transform, uint mask)
         {
             if ((mask & 1u) != 0)
                 t.position = new Vector3(transform.Position.X, transform.Position.Y, transform.Position.Z);

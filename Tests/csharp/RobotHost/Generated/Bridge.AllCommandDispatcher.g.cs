@@ -22,15 +22,13 @@ namespace Bridge.Bindings
 
             while (cursor < end)
             {
-                long remaining = end - cursor;
-                if (remaining < sizeof(BridgeCommandHeader))
+                int remaining = (int)(end - cursor);
+                if (remaining < (int)sizeof(BridgeCommandHeader))
                     break;
 
                 var header = (BridgeCommandHeader*)cursor;
                 int size = header->Size;
-                if (size <= 0)
-                    break;
-                if (size < sizeof(BridgeCommandHeader) || size > remaining)
+                if ((uint)size < (uint)sizeof(BridgeCommandHeader) || (uint)size > (uint)remaining)
                     break;
 
                 if (header->Type == (ushort)BridgeCommandType.CallHost && size >= sizeof(BridgeCmdCallHost))

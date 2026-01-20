@@ -11,15 +11,22 @@ namespace bridge
 	void CommandStream::Clear()
 	{
 		bytes_.clear();
-		strings_.clear();
+		strings_used_ = 0;
 	}
 
 	BridgeStringView CommandStream::StoreUtf8(std::string utf8)
 	{
-		auto stored = std::make_unique<std::string>(std::move(utf8));
+		if (strings_used_ >= strings_.size())
+		{
+			strings_.emplace_back(std::make_unique<std::string>());
+		}
+
+		std::string* stored = strings_[strings_used_].get();
+		*stored = std::move(utf8);
+
 		const char* p = stored->data();
 		const uint32_t len = static_cast<uint32_t>(stored->size());
-		strings_.emplace_back(std::move(stored));
+		strings_used_++;
 
 		BridgeStringView view{};
 		view.ptr = static_cast<uint64_t>(reinterpret_cast<uintptr_t>(p));
@@ -37,4 +44,3 @@ namespace bridge
 		return static_cast<uint32_t>(bytes_.size());
 	}
 }
-

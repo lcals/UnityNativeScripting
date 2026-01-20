@@ -32,6 +32,19 @@ namespace Bridge.Core
         }
 
         /// <summary>
+        /// 推进 Core 一帧，并直接返回本帧生成的命令字节流（减少一次 P/Invoke）。
+        /// </summary>
+        public CommandStream TickAndGetCommandStream(float dt)
+        {
+            ThrowIfDisposed();
+            var result = BridgeNative.BridgeCore_TickAndGetCommandStream(_handle, dt, out var ptr, out var len);
+            if (result != BridgeResult.Ok || ptr == IntPtr.Zero || len == 0)
+                return CommandStream.Empty;
+
+            return new CommandStream(ptr, len);
+        }
+
+        /// <summary>
         /// 获取最近一次 <see cref="Tick"/> 生成的命令字节流（command stream）。
         /// </summary>
         /// <remarks>

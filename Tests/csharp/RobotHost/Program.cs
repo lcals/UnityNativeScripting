@@ -116,9 +116,7 @@ static class Program
                     for (int i = 0; i < cores.Length; i++)
                     {
                         var core = cores[i];
-                        core.Tick(dt);
-
-                        var stream = core.GetCommandStream();
+                        var stream = core.TickAndGetCommandStream(dt);
                         BridgeAllCommandDispatcher.Dispatch(stream, hosts[i]);
                     }
                 }
@@ -181,9 +179,7 @@ static class Program
                     for (int i = 0; i < cores.Length; i++)
                     {
                         var core = cores[i];
-                        core.Tick(dt);
-
-                        var stream = core.GetCommandStream();
+                        var stream = core.TickAndGetCommandStream(dt);
                         BridgeAllCommandDispatcher.Dispatch(stream, hosts[i]);
                     }
                 }

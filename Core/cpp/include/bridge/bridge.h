@@ -174,6 +174,16 @@ typedef struct BridgeCmdCallHost
 
 BRIDGE_API void BRIDGE_CALL BridgeCore_Tick(BridgeCore* core, float dt);
 
+// 组合调用：Tick + GetCommandStream（减少 Host 侧 P/Invoke 次数）。
+// 等价于：
+//   BridgeCore_Tick(core, dt);
+//   BridgeCore_GetCommandStream(core, out_ptr, out_len);
+BRIDGE_API BridgeResult BRIDGE_CALL BridgeCore_TickAndGetCommandStream(
+  BridgeCore* core,
+  float dt,
+  const void** out_ptr,
+  uint32_t* out_len);
+
 // 返回最近一次 BridgeCore_Tick 生成的 command stream（连续字节流）指针。
 // 返回的内存由 Core 持有，只保证在下一次 BridgeCore_Tick（或 BridgeCore_Destroy）前有效。
 BRIDGE_API BridgeResult BRIDGE_CALL BridgeCore_GetCommandStream(
@@ -196,4 +206,3 @@ BRIDGE_API BridgeResult BRIDGE_CALL BridgeCore_PushCallCore(
 #ifdef __cplusplus
 } // extern "C"
 #endif
-
