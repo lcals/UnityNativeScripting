@@ -62,7 +62,6 @@ namespace bridge
 		cmd.header.type = BRIDGE_CMD_CALL_HOST;
 		cmd.header.size = static_cast<uint16_t>(alignedTotal);
 		cmd.func_id = funcId;
-		cmd.payload_size = payloadSize;
 
 		uint8_t* dst = core_.commands.Allocate(static_cast<size_t>(alignedTotal));
 		if (!dst)

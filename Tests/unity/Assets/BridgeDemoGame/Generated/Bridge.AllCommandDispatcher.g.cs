@@ -48,67 +48,64 @@ namespace Bridge.Bindings
                 if (header->Type == (ushort)BridgeCommandType.CallHost && size >= sizeof(BridgeCmdCallHost))
                 {
                     var cmd = (BridgeCmdCallHost*)cursor;
-                    uint payloadSize = cmd->PayloadSize;
-                    if (payloadSize <= (uint)(size - sizeof(BridgeCmdCallHost)))
-                    {
-                        byte* payloadPtr = cursor + sizeof(BridgeCmdCallHost);
+                    uint payloadBytes = (uint)(size - sizeof(BridgeCmdCallHost));
+                    byte* payloadPtr = cursor + sizeof(BridgeCmdCallHost);
 
-                        switch (cmd->FuncId)
+                    switch (cmd->FuncId)
+                    {
+                        case 0x82A5E93Au:
                         {
-                            case 0x82A5E93Au:
+                            if (payloadBytes >= (uint)sizeof(DemoAsset.Bindings.HostArgs_LoadAsset))
                             {
-                                if (payloadSize == (uint)sizeof(DemoAsset.Bindings.HostArgs_LoadAsset))
-                                {
-                                    ref readonly DemoAsset.Bindings.HostArgs_LoadAsset a = ref *((DemoAsset.Bindings.HostArgs_LoadAsset*)payloadPtr);
-                                    host.LoadAsset(a.RequestId, a.AssetType, a.AssetKey);
-                                }
-                                break;
+                                ref readonly DemoAsset.Bindings.HostArgs_LoadAsset a = ref *((DemoAsset.Bindings.HostArgs_LoadAsset*)payloadPtr);
+                                host.LoadAsset(a.RequestId, a.AssetType, a.AssetKey);
                             }
-                            case 0xBCAA331Du:
+                            break;
+                        }
+                        case 0xBCAA331Du:
+                        {
+                            if (payloadBytes >= (uint)sizeof(DemoEntity.Bindings.HostArgs_SpawnEntity))
                             {
-                                if (payloadSize == (uint)sizeof(DemoEntity.Bindings.HostArgs_SpawnEntity))
-                                {
-                                    ref readonly DemoEntity.Bindings.HostArgs_SpawnEntity a = ref *((DemoEntity.Bindings.HostArgs_SpawnEntity*)payloadPtr);
-                                    host.SpawnEntity(a.EntityId, a.PrefabHandle, in a.Transform, a.Flags);
-                                }
-                                break;
+                                ref readonly DemoEntity.Bindings.HostArgs_SpawnEntity a = ref *((DemoEntity.Bindings.HostArgs_SpawnEntity*)payloadPtr);
+                                host.SpawnEntity(a.EntityId, a.PrefabHandle, in a.Transform, a.Flags);
                             }
-                            case 0x20DA0B6Fu:
+                            break;
+                        }
+                        case 0x20DA0B6Fu:
+                        {
+                            if (payloadBytes >= (uint)sizeof(DemoEntity.Bindings.HostArgs_SetTransform))
                             {
-                                if (payloadSize == (uint)sizeof(DemoEntity.Bindings.HostArgs_SetTransform))
-                                {
-                                    ref readonly DemoEntity.Bindings.HostArgs_SetTransform a = ref *((DemoEntity.Bindings.HostArgs_SetTransform*)payloadPtr);
-                                    host.SetTransform(a.EntityId, a.Mask, in a.Transform);
-                                }
-                                break;
+                                ref readonly DemoEntity.Bindings.HostArgs_SetTransform a = ref *((DemoEntity.Bindings.HostArgs_SetTransform*)payloadPtr);
+                                host.SetTransform(a.EntityId, a.Mask, in a.Transform);
                             }
-                            case 0x5B16AE9Eu:
+                            break;
+                        }
+                        case 0x5B16AE9Eu:
+                        {
+                            if (payloadBytes >= (uint)sizeof(DemoEntity.Bindings.HostArgs_SetPosition))
                             {
-                                if (payloadSize == (uint)sizeof(DemoEntity.Bindings.HostArgs_SetPosition))
-                                {
-                                    ref readonly DemoEntity.Bindings.HostArgs_SetPosition a = ref *((DemoEntity.Bindings.HostArgs_SetPosition*)payloadPtr);
-                                    host.SetPosition(a.EntityId, a.Position);
-                                }
-                                break;
+                                ref readonly DemoEntity.Bindings.HostArgs_SetPosition a = ref *((DemoEntity.Bindings.HostArgs_SetPosition*)payloadPtr);
+                                host.SetPosition(a.EntityId, a.Position);
                             }
-                            case 0xC7C1C59Cu:
+                            break;
+                        }
+                        case 0xC7C1C59Cu:
+                        {
+                            if (payloadBytes >= (uint)sizeof(DemoEntity.Bindings.HostArgs_DestroyEntity))
                             {
-                                if (payloadSize == (uint)sizeof(DemoEntity.Bindings.HostArgs_DestroyEntity))
-                                {
-                                    ref readonly DemoEntity.Bindings.HostArgs_DestroyEntity a = ref *((DemoEntity.Bindings.HostArgs_DestroyEntity*)payloadPtr);
-                                    host.DestroyEntity(a.EntityId);
-                                }
-                                break;
+                                ref readonly DemoEntity.Bindings.HostArgs_DestroyEntity a = ref *((DemoEntity.Bindings.HostArgs_DestroyEntity*)payloadPtr);
+                                host.DestroyEntity(a.EntityId);
                             }
-                            case 0xDA3184A2u:
+                            break;
+                        }
+                        case 0xDA3184A2u:
+                        {
+                            if (payloadBytes >= (uint)sizeof(DemoLog.Bindings.HostArgs_Log))
                             {
-                                if (payloadSize == (uint)sizeof(DemoLog.Bindings.HostArgs_Log))
-                                {
-                                    ref readonly DemoLog.Bindings.HostArgs_Log a = ref *((DemoLog.Bindings.HostArgs_Log*)payloadPtr);
-                                    host.Log(a.Level, a.Message);
-                                }
-                                break;
+                                ref readonly DemoLog.Bindings.HostArgs_Log a = ref *((DemoLog.Bindings.HostArgs_Log*)payloadPtr);
+                                host.Log(a.Level, a.Message);
                             }
+                            break;
                         }
                     }
                 }
@@ -212,67 +209,64 @@ namespace Bridge.Bindings
                 if (header->Type == (ushort)BridgeCommandType.CallHost && size >= sizeof(BridgeCmdCallHost))
                 {
                     var cmd = (BridgeCmdCallHost*)cursor;
-                    uint payloadSize = cmd->PayloadSize;
-                    if (payloadSize <= (uint)(size - sizeof(BridgeCmdCallHost)))
-                    {
-                        byte* payloadPtr = cursor + sizeof(BridgeCmdCallHost);
+                    uint payloadBytes = (uint)(size - sizeof(BridgeCmdCallHost));
+                    byte* payloadPtr = cursor + sizeof(BridgeCmdCallHost);
 
-                        switch (cmd->FuncId)
+                    switch (cmd->FuncId)
+                    {
+                        case 0x82A5E93Au:
                         {
-                            case 0x82A5E93Au:
+                            if (payloadBytes >= (uint)sizeof(DemoAsset.Bindings.HostArgs_LoadAsset))
                             {
-                                if (payloadSize == (uint)sizeof(DemoAsset.Bindings.HostArgs_LoadAsset))
-                                {
-                                    ref readonly DemoAsset.Bindings.HostArgs_LoadAsset a = ref *((DemoAsset.Bindings.HostArgs_LoadAsset*)payloadPtr);
-                                    host.LoadAsset(a.RequestId, a.AssetType, a.AssetKey);
-                                }
-                                break;
+                                ref readonly DemoAsset.Bindings.HostArgs_LoadAsset a = ref *((DemoAsset.Bindings.HostArgs_LoadAsset*)payloadPtr);
+                                host.LoadAsset(a.RequestId, a.AssetType, a.AssetKey);
                             }
-                            case 0xBCAA331Du:
+                            break;
+                        }
+                        case 0xBCAA331Du:
+                        {
+                            if (payloadBytes >= (uint)sizeof(DemoEntity.Bindings.HostArgs_SpawnEntity))
                             {
-                                if (payloadSize == (uint)sizeof(DemoEntity.Bindings.HostArgs_SpawnEntity))
-                                {
-                                    ref readonly DemoEntity.Bindings.HostArgs_SpawnEntity a = ref *((DemoEntity.Bindings.HostArgs_SpawnEntity*)payloadPtr);
-                                    host.SpawnEntity(a.EntityId, a.PrefabHandle, in a.Transform, a.Flags);
-                                }
-                                break;
+                                ref readonly DemoEntity.Bindings.HostArgs_SpawnEntity a = ref *((DemoEntity.Bindings.HostArgs_SpawnEntity*)payloadPtr);
+                                host.SpawnEntity(a.EntityId, a.PrefabHandle, in a.Transform, a.Flags);
                             }
-                            case 0x20DA0B6Fu:
+                            break;
+                        }
+                        case 0x20DA0B6Fu:
+                        {
+                            if (payloadBytes >= (uint)sizeof(DemoEntity.Bindings.HostArgs_SetTransform))
                             {
-                                if (payloadSize == (uint)sizeof(DemoEntity.Bindings.HostArgs_SetTransform))
-                                {
-                                    ref readonly DemoEntity.Bindings.HostArgs_SetTransform a = ref *((DemoEntity.Bindings.HostArgs_SetTransform*)payloadPtr);
-                                    host.SetTransform(a.EntityId, a.Mask, in a.Transform);
-                                }
-                                break;
+                                ref readonly DemoEntity.Bindings.HostArgs_SetTransform a = ref *((DemoEntity.Bindings.HostArgs_SetTransform*)payloadPtr);
+                                host.SetTransform(a.EntityId, a.Mask, in a.Transform);
                             }
-                            case 0x5B16AE9Eu:
+                            break;
+                        }
+                        case 0x5B16AE9Eu:
+                        {
+                            if (payloadBytes >= (uint)sizeof(DemoEntity.Bindings.HostArgs_SetPosition))
                             {
-                                if (payloadSize == (uint)sizeof(DemoEntity.Bindings.HostArgs_SetPosition))
-                                {
-                                    ref readonly DemoEntity.Bindings.HostArgs_SetPosition a = ref *((DemoEntity.Bindings.HostArgs_SetPosition*)payloadPtr);
-                                    host.SetPosition(a.EntityId, a.Position);
-                                }
-                                break;
+                                ref readonly DemoEntity.Bindings.HostArgs_SetPosition a = ref *((DemoEntity.Bindings.HostArgs_SetPosition*)payloadPtr);
+                                host.SetPosition(a.EntityId, a.Position);
                             }
-                            case 0xC7C1C59Cu:
+                            break;
+                        }
+                        case 0xC7C1C59Cu:
+                        {
+                            if (payloadBytes >= (uint)sizeof(DemoEntity.Bindings.HostArgs_DestroyEntity))
                             {
-                                if (payloadSize == (uint)sizeof(DemoEntity.Bindings.HostArgs_DestroyEntity))
-                                {
-                                    ref readonly DemoEntity.Bindings.HostArgs_DestroyEntity a = ref *((DemoEntity.Bindings.HostArgs_DestroyEntity*)payloadPtr);
-                                    host.DestroyEntity(a.EntityId);
-                                }
-                                break;
+                                ref readonly DemoEntity.Bindings.HostArgs_DestroyEntity a = ref *((DemoEntity.Bindings.HostArgs_DestroyEntity*)payloadPtr);
+                                host.DestroyEntity(a.EntityId);
                             }
-                            case 0xDA3184A2u:
+                            break;
+                        }
+                        case 0xDA3184A2u:
+                        {
+                            if (payloadBytes >= (uint)sizeof(DemoLog.Bindings.HostArgs_Log))
                             {
-                                if (payloadSize == (uint)sizeof(DemoLog.Bindings.HostArgs_Log))
-                                {
-                                    ref readonly DemoLog.Bindings.HostArgs_Log a = ref *((DemoLog.Bindings.HostArgs_Log*)payloadPtr);
-                                    host.Log(a.Level, a.Message);
-                                }
-                                break;
+                                ref readonly DemoLog.Bindings.HostArgs_Log a = ref *((DemoLog.Bindings.HostArgs_Log*)payloadPtr);
+                                host.Log(a.Level, a.Message);
                             }
+                            break;
                         }
                     }
                 }

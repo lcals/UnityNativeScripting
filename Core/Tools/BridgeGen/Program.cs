@@ -538,13 +538,11 @@ static class Program
             sb.AppendLine("                if (header->Type == (ushort)BridgeCommandType.CallHost && size >= sizeof(BridgeCmdCallHost))");
             sb.AppendLine("                {");
             sb.AppendLine("                    var cmd = (BridgeCmdCallHost*)cursor;");
-            sb.AppendLine("                    uint payloadSize = cmd->PayloadSize;");
-            sb.AppendLine("                    if (payloadSize <= (uint)(size - sizeof(BridgeCmdCallHost)))");
-            sb.AppendLine("                    {");
-            sb.AppendLine("                        byte* payloadPtr = cursor + sizeof(BridgeCmdCallHost);");
+            sb.AppendLine("                    uint payloadBytes = (uint)(size - sizeof(BridgeCmdCallHost));");
+            sb.AppendLine("                    byte* payloadPtr = cursor + sizeof(BridgeCmdCallHost);");
             sb.AppendLine();
-            sb.AppendLine("                        switch (cmd->FuncId)");
-            sb.AppendLine("                        {");
+            sb.AppendLine("                    switch (cmd->FuncId)");
+            sb.AppendLine("                    {");
 
             foreach (var m in modules)
             {
@@ -556,7 +554,7 @@ static class Program
                     uint id = ComputeHostFuncId(m.Module, fn.Name);
                     sb.AppendLine($"                            case 0x{id:X8}u:");
                     sb.AppendLine("                            {");
-                    sb.Append("                                if (payloadSize == (uint)sizeof(");
+                    sb.Append("                                if (payloadBytes >= (uint)sizeof(");
                     sb.Append(m.CsNamespace);
                     sb.Append(".HostArgs_");
                     sb.Append(fn.Name);
@@ -588,7 +586,6 @@ static class Program
                 }
             }
 
-            sb.AppendLine("                        }");
             sb.AppendLine("                    }");
             sb.AppendLine("                }");
             sb.AppendLine();
@@ -705,13 +702,11 @@ static class Program
             sb.AppendLine("                if (header->Type == (ushort)BridgeCommandType.CallHost && size >= sizeof(BridgeCmdCallHost))");
             sb.AppendLine("                {");
             sb.AppendLine("                    var cmd = (BridgeCmdCallHost*)cursor;");
-            sb.AppendLine("                    uint payloadSize = cmd->PayloadSize;");
-            sb.AppendLine("                    if (payloadSize <= (uint)(size - sizeof(BridgeCmdCallHost)))");
-            sb.AppendLine("                    {");
-            sb.AppendLine("                        byte* payloadPtr = cursor + sizeof(BridgeCmdCallHost);");
+            sb.AppendLine("                    uint payloadBytes = (uint)(size - sizeof(BridgeCmdCallHost));");
+            sb.AppendLine("                    byte* payloadPtr = cursor + sizeof(BridgeCmdCallHost);");
             sb.AppendLine();
-            sb.AppendLine("                        switch (cmd->FuncId)");
-            sb.AppendLine("                        {");
+            sb.AppendLine("                    switch (cmd->FuncId)");
+            sb.AppendLine("                    {");
 
             foreach (var m in modules)
             {
@@ -723,7 +718,7 @@ static class Program
                     uint id = ComputeHostFuncId(m.Module, fn.Name);
                     sb.AppendLine($"                            case 0x{id:X8}u:");
                     sb.AppendLine("                            {");
-                    sb.Append("                                if (payloadSize == (uint)sizeof(");
+                    sb.Append("                                if (payloadBytes >= (uint)sizeof(");
                     sb.Append(m.CsNamespace);
                     sb.Append(".HostArgs_");
                     sb.Append(fn.Name);
@@ -755,7 +750,6 @@ static class Program
                 }
             }
 
-            sb.AppendLine("                        }");
             sb.AppendLine("                    }");
             sb.AppendLine("                }");
             sb.AppendLine();

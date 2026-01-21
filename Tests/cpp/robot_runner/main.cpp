@@ -114,8 +114,9 @@ int main(int argc, char** argv)
             header->size >= sizeof(BridgeCmdCallHost))
         {
           const auto* cmd = reinterpret_cast<const BridgeCmdCallHost*>(header);
+          const uint32_t payload_bytes = static_cast<uint32_t>(header->size) - static_cast<uint32_t>(sizeof(BridgeCmdCallHost));
           if (cmd->func_id == static_cast<uint32_t>(demo_asset::HostFuncId::LoadAsset) &&
-              cmd->payload_size == sizeof(demo_asset::HostArgs_LoadAsset))
+              payload_bytes >= sizeof(demo_asset::HostArgs_LoadAsset))
           {
             ++totalAssetRequests;
             const uint8_t* payload = reinterpret_cast<const uint8_t*>(cmd) + sizeof(BridgeCmdCallHost);

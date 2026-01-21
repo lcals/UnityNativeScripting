@@ -119,7 +119,6 @@ namespace Bridge.Core
     {
         public ushort Type;
         public ushort Size;
-        public uint Reserved0;
     }
 
     public enum BridgeCommandType : ushort
@@ -133,6 +132,5 @@ namespace Bridge.Core
     {
         public BridgeCommandHeader Header;
         public uint FuncId;
-        public uint PayloadSize;
     }
 }

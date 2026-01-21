@@ -160,16 +160,14 @@ typedef struct BridgeCommandHeader
   uint16_t type; // BridgeCommandType
   // 命令总大小（包含 header+后续数据），必须 8 字节对齐
   uint16_t size;
-  uint32_t reserved0;
 } BridgeCommandHeader;
 
 // 通用 Host 调用命令头：
-// - payload 紧跟其后（payload_size 字节），并按 8 字节补齐到 header.size
+// - payload 紧跟其后，并按 8 字节补齐到 header.size
 typedef struct BridgeCmdCallHost
 {
   BridgeCommandHeader header;
   uint32_t func_id;
-  uint32_t payload_size;
 } BridgeCmdCallHost;
 
 BRIDGE_API void BRIDGE_CALL BridgeCore_Tick(BridgeCore* core, float dt);
