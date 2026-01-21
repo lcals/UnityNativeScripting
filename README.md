@@ -60,6 +60,7 @@ dotnet run --project Core/Tools/BridgeGen/BridgeGen.csproj -c Release -- --out-c
 - 架构设计：`Core/docs/BRIDGE_DESIGN.md`
 - 构建与运行：`Core/docs/BUILD.md`
 - Unity Windows 原生库加载：`Core/docs/UNITY_WIN_NATIVE_LOADING.md`
+- 性能优化记录：`Core/docs/PERF_OPTIMIZATIONS.md`
 
 ## 性能测试（带历史记录）
 
@@ -92,7 +93,6 @@ powershell -ExecutionPolicy Bypass -File Tools/RunPerf.ps1 -Bots 1000 -Frames 30
 | 2026-01-21T09:09:53.4839892Z | 20260121_160935 | dispatchfast | 71d7614* | 24999667 | 56703065 | 56603773.58 | n/a | n/a |
 | 2026-01-21T09:02:21.8370259Z | 20260121_170122 | post_commit | 46c54af | 22331042 | 60740046 | 61224489.80 | 47947066.44 | 32652492.58 |
 <!-- PERF_TABLE_END -->
-
 
 
 
