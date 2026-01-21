@@ -141,6 +141,40 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File Tools/RunPerf.ps1 -UnityVersion 60
 **效果**
 - Unity IL2CPP Source 的 `ticks/s`（1k/10k）在本机有稳定提升（见 `README.md` 性能摘要表与对应 runId）。
 
+### 6) 缩小 `CallHost` 命令头（每 tick stream：40B → 32B）
+
+**引入**
+- git：`4bfba43`
+- 验证：Unity `6000.0.40f1`
+  - tag=`post_4bfba43_shrink_header`；runId=`20260121_213218`（repeat=3）
+  - tag=`post_4bfba43_shrink_header_rerun`；runId=`20260121_213500`（repeat=3）
+- 对比：tag=`probe_9219989_stable_window`；runId=`20260121_211854`（repeat=3）
+
+**现象**
+- Robot mode 下每 tick 主要只发一个 `SetPosition`，旧格式单条命令为：
+  - `BridgeCmdCallHost` 16B + `HostArgs_SetPosition` 24B = 40B
+- 在大 bots（10k）下，解析与内存带宽压力会被放大（`total_bytes` 线性增长）。
+
+**改动**
+- 缩小 Core→Host command header：
+  - `BridgeCommandHeader`：去掉 `reserved0`（8B → 4B）
+  - `BridgeCmdCallHost`：去掉 `payload_size`（16B → 8B）
+- Host 侧 payload 校验改为：`payloadBytes = header.size - sizeof(BridgeCmdCallHost)`（包含 padding），并用 `payloadBytes >= sizeof(Args)` 做安全检查。
+- 同步更新 C++ Core 写入、C# interop structs、生成器与解析端（RobotRunner/dispatcher）。
+
+**位置**
+- C ABI：`Core/cpp/include/bridge/bridge.h`
+- Core 写入：`Core/cpp/src/core/core_instance.cpp`
+- C# structs：
+  - `Core/csharp/Bridge.Core/Interop/Structs.cs`
+  - `Packages/com.unitynativescripting.bridgecore/Runtime/Bridge.Core/Interop/Structs.cs`
+- 生成器：`Core/Tools/BridgeGen/Program.cs`
+- 解析端：`Tests/cpp/robot_runner/main.cpp`
+
+**效果（本机）**
+- `total_bytes`：10k*3000 从约 `1,200,000,000` 降到 `960,000,000`（-20%）
+- Unity IL2CPP Source：10k `ticks/s` 约 `34.17M` → `38.64M`（明显提升，见对应 runId）
+
 ## 优化流程建议（只在提升时记录/提交）
 
 1. 做一次“小步”改动（只动一个热点点位）。
