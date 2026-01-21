@@ -487,6 +487,9 @@ function Update-PerfReadme(
             if ([string]::IsNullOrWhiteSpace($runId)) { continue }
             if (-not $seen.Add($runId)) { continue }
 
+            $dirty = Try-Get { [bool]$rec.git.dirty }
+            if ($dirty) { continue }
+
             $tsUtcObj = Try-Get { $rec.tsUtc }
             $tsText = $null
             if ($tsUtcObj -is [DateTime])

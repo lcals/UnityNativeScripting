@@ -85,6 +85,37 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File Tools/RunPerf.ps1 -UnityVersion 60
 **效果**
 - IL2CPP 输出中 `streams[i]` 从 `GetAt(...)` 变为通过 `GetAddressAt(0)` 获取底层指针后直接索引读取（减少边界检查/拷贝开销）。
 
+### 4) 用更小的 Host 命令替代 “每帧全量 Transform”
+
+**引入**
+- git：`d5fa6a1`
+- 验证：Unity `6000.0.40f1`
+  - tag=`post_d5fa6a1_setposition`；runId=`20260121_202154`
+  - tag=`post_d5fa6a1_setposition_rerun`；runId=`20260121_202436`
+- 对比基线：tag=`post_2772303_r5`；runId=`20260121_193135`
+
+**现象**
+- Demo 业务每帧只更新 position.x，但仍通过 `SetTransform(entityId, mask=1, BridgeTransform)` 发送全量 `BridgeTransform`（payload 64B，单 tick stream=80B）。
+- 在 10k bots 下，这会放大跨边界拷贝与 Host 侧解析成本。
+
+**改动**
+- 为 `DemoEntity` 增加更小 payload 的 Host API：`SetPosition(entityId, BridgeVec3 position)`。
+- Demo 业务侧（C++）每帧改为发 `SetPosition`，把每 tick stream 从 80B 降到 40B。
+- RobotHost/Unity Host 增加对应实现（计入 `Transforms` 统计；Unity 侧直接设置 `Transform.position`）。
+
+**位置**
+- 定义：`Tests/defs/demo_entity_api.def`
+- 生成器：`Core/Tools/BridgeGen/Program.cs`（补齐 `BridgeVec3/BridgeQuat` 类型映射）
+- Demo 业务：`Tests/cpp/demo_game/src/demo_asset_app.cpp`
+- RobotHost：`Tests/csharp/RobotHost/Bind/RobotHostApi.cs`、`Tests/csharp/RobotHost/Bind/WorldState.cs`
+- Unity Host：`Tests/unity/Assets/BridgeDemoGame/Runtime/Host/DemoGameUnityHostApi.Entity.cs`
+
+**效果（本机）**
+- Unity IL2CPP Source（repeat=5）
+  - 1k ticks/s：约 `50.34M` → `55.52M`
+  - 10k ticks/s：约 `31.06M` → `33.67M`
+- `total_bytes` 约减半（10k*300：`240,000,000` → `120,000,000`），解析与拷贝成本显著下降。
+
 ## 优化流程建议（只在提升时记录/提交）
 
 1. 做一次“小步”改动（只动一个热点点位）。
