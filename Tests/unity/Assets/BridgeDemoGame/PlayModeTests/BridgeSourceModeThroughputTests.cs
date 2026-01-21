@@ -90,8 +90,14 @@ namespace BridgeDemoGame.PlayModeTests
             if (bots <= 0)
                 throw new ArgumentOutOfRangeException(nameof(bots));
 
-            const int warmupFrames = 60;
-            const int measureFrames = 300;
+            // NOTE: 旧值（warmup=60/measure=300）会让计时窗口非常短：
+            // - bots=1000 时只有 ~5ms
+            // - bots=10000 时也只有 ~80ms
+            // 容易被调度抖动/后台任务放大，导致 ticks/s 波动很大。
+            // 这里按目标 ticks 数动态放大 frames，让计时窗口更稳定。
+            const int targetTicks = 30_000_000;
+            int measureFrames = Math.Clamp(targetTicks / bots, 300, 30_000);
+            int warmupFrames = Math.Clamp(measureFrames / 10, 60, 3_000);
             const float dt = 1.0f / 60.0f;
 
             BridgeCore.PrepareTickManyCache(bots);
