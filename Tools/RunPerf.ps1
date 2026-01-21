@@ -318,11 +318,20 @@ function Parse-RobotRunnerOutput([string]$Text)
         return $null
     }
 
+    $elapsed_s = & $getDouble "elapsed: ([0-9.]+) s"
+    $ticks = & $getInt "ticks: (\d+)"
+    $ticks_per_s = $null
+    if ($elapsed_s -and $elapsed_s -gt 1e-9 -and $ticks -ne $null)
+    {
+        $ticks_per_s = [double]$ticks / [double]$elapsed_s
+    }
+
     return [ordered]@{
-        elapsed_s      = & $getDouble "elapsed: ([0-9.]+) s"
+        elapsed_s      = $elapsed_s
         total_commands = & $getInt "total commands parsed: (\d+)"
         commands_per_s = & $getDouble "commands/sec: (\d+)"
-        ticks          = & $getInt "ticks: (\d+)"
+        ticks          = $ticks
+        ticks_per_s    = $ticks_per_s
         asset_requests = & $getInt "total asset requests: (\d+)"
     }
 }
@@ -432,8 +441,8 @@ function Update-PerfReadme(
         $text = $text.TrimEnd() + ($nl + $nl) + $section
     }
 
-    $tableHeader = "| tsUtc | runId | tag | git | robothost_null cmd/s | robot_runner cmd/s | il2cpp_source 1k ticks/s | il2cpp_source 10k ticks/s |"
-    $tableSep = "|---|---|---|---|---:|---:|---:|---:|"
+    $tableHeader = "| tsUtc | runId | tag | git | robothost_null cmd/s | robot_runner cmd/s | robot_runner ticks/s | il2cpp_source 1k ticks/s | il2cpp_source 10k ticks/s |"
+    $tableSep = "|---|---|---|---|---:|---:|---:|---:|---:|"
 
     $rows = New-Object System.Collections.Generic.List[string]
 
@@ -517,6 +526,16 @@ function Update-PerfReadme(
 
             $rhNull = Try-Get { [double]$rec.results.robothost_null.commands_per_s }
             $rr = Try-Get { [double]$rec.results.robot_runner.commands_per_s }
+            $rrTicksPerS = Try-Get { [double]$rec.results.robot_runner.ticks_per_s }
+            if ($rrTicksPerS -eq $null)
+            {
+                $rrElapsed = Try-Get { [double]$rec.results.robot_runner.elapsed_s }
+                $rrTicks = Try-Get { [double]$rec.results.robot_runner.ticks }
+                if ($rrElapsed -and $rrElapsed -gt 1e-9 -and $rrTicks -ne $null)
+                {
+                    $rrTicksPerS = $rrTicks / $rrElapsed
+                }
+            }
 
             $il2 = Try-Get { $rec.results.unity_il2cpp_source }
             $il2_1k = $null
@@ -540,6 +559,7 @@ function Update-PerfReadme(
                     "| $tsUtc | $runId | $tag | $commit |",
                     " $(& $fmt0 $rhNull) |",
                     " $(& $fmt0 $rr) |",
+                    " $(& $fmt2 $rrTicksPerS) |",
                     " $(& $fmt2 $il2_1k) |",
                     " $(& $fmt2 $il2_10k) |"
                 ) -join "")
