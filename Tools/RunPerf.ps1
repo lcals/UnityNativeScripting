@@ -9,6 +9,8 @@ param(
     [switch]$NoReadme,
     [string]$ReadmeFile = "",
     [int]$ReadmeMaxRows = 20,
+    [ValidateSet("desc", "asc")]
+    [string]$ReadmeSort = "desc",
     [switch]$UpdateReadmeOnly,
 
     [string]$UnityVersion = "",
@@ -393,7 +395,8 @@ function Parse-BridgePerfLog([string]$LogPath)
 function Update-PerfReadme(
     [string]$ReadmePath,
     [string]$HistoryPath,
-    [int]$MaxRows
+    [int]$MaxRows,
+    [string]$Sort
 )
 {
     if ([string]::IsNullOrWhiteSpace($ReadmePath))
@@ -436,15 +439,14 @@ function Update-PerfReadme(
 
     if (Test-Path $HistoryPath)
     {
-        $tailCount = [Math]::Max(1, [Math]::Min(5000, $MaxRows * 50))
+        $tailCount = [Math]::Max(1, [Math]::Min(20000, $MaxRows * 200))
         $lines = Get-Content $HistoryPath -Tail $tailCount
 
+        $items = New-Object System.Collections.Generic.List[object]
         $seen = New-Object System.Collections.Generic.HashSet[string]
-        for ($i = $lines.Count - 1; $i -ge 0; $i--)
-        {
-            if ($rows.Count -ge $MaxRows) { break }
 
-            $line = $lines[$i]
+        foreach ($line in $lines)
+        {
             if ([string]::IsNullOrWhiteSpace($line)) { continue }
 
             $rec = $null
@@ -456,14 +458,51 @@ function Update-PerfReadme(
             if (-not $seen.Add($runId)) { continue }
 
             $tsUtcObj = Try-Get { $rec.tsUtc }
-            $tsUtc = $null
+            $tsText = $null
             if ($tsUtcObj -is [DateTime])
             {
-                $tsUtc = $tsUtcObj.ToUniversalTime().ToString("o")
+                $tsText = $tsUtcObj.ToUniversalTime().ToString("o")
             }
             else
             {
-                $tsUtc = Try-Get { [string]$tsUtcObj }
+                $tsText = Try-Get { [string]$tsUtcObj }
+            }
+
+            $ts = $null
+            if (-not [string]::IsNullOrWhiteSpace($tsText))
+            {
+                $ts = Try-Get { [DateTime]::Parse($tsText).ToUniversalTime() }
+            }
+
+            if (-not $ts)
+            {
+                $ts = Try-Get { [DateTime]::ParseExact($runId, "yyyyMMdd_HHmmss", $null).ToUniversalTime() }
+            }
+
+            $items.Add([pscustomobject]@{
+                    ts    = $ts
+                    tsTxt = $tsText
+                    rec   = $rec
+                })
+        }
+
+        $sorted =
+            if ($Sort -eq "asc") { $items | Sort-Object ts, @{ Expression = { $_.rec.runId }; Descending = $false } }
+            else { $items | Sort-Object ts, @{ Expression = { $_.rec.runId }; Descending = $true } -Descending }
+
+        foreach ($it in ($sorted | Select-Object -First $MaxRows))
+        {
+            $rec = $it.rec
+            $runId = Try-Get { [string]$rec.runId }
+
+            $tsUtc = $null
+            if ($it.ts)
+            {
+                $tsUtc = $it.ts.ToString("o")
+            }
+            else
+            {
+                $tsUtc = $it.tsTxt
             }
             if ([string]::IsNullOrWhiteSpace($tsUtc)) { $tsUtc = "n/a" }
 
@@ -552,7 +591,7 @@ if ($UpdateReadmeOnly)
 {
     if ($readmePath)
     {
-        Update-PerfReadme -ReadmePath $readmePath -HistoryPath $OutFile -MaxRows $ReadmeMaxRows
+        Update-PerfReadme -ReadmePath $readmePath -HistoryPath $OutFile -MaxRows $ReadmeMaxRows -Sort $ReadmeSort
         Write-Host "Updated: $readmePath"
     }
     else
@@ -828,7 +867,7 @@ if ($readmePath)
 {
     try
     {
-        Update-PerfReadme -ReadmePath $readmePath -HistoryPath $OutFile -MaxRows $ReadmeMaxRows
+        Update-PerfReadme -ReadmePath $readmePath -HistoryPath $OutFile -MaxRows $ReadmeMaxRows -Sort $ReadmeSort
         Write-Host "Updated: $readmePath"
     }
     catch
