@@ -25,7 +25,8 @@ namespace Bridge.Bindings
     /// </summary>
     public static class BridgeAllCommandDispatcher
     {
-        public static unsafe void DispatchFast(CommandStream stream, BridgeAllHostApiBase host)
+        public static unsafe void DispatchFast<THost>(CommandStream stream, THost host)
+            where THost : BridgeAllHostApiBase
         {
             if (host == null || stream.Ptr == System.IntPtr.Zero || stream.Length == 0)
                 return;
@@ -115,6 +116,9 @@ namespace Bridge.Bindings
                 cursor += size;
             }
         }
+
+        public static unsafe void DispatchFast(CommandStream stream, BridgeAllHostApiBase host)
+            => DispatchFast<BridgeAllHostApiBase>(stream, host);
 
         public static unsafe void Dispatch<THost>(CommandStream stream, THost host)
             where THost : class, DemoAsset.Bindings.IDemoAssetHostApi, DemoEntity.Bindings.IDemoEntityHostApi, DemoLog.Bindings.IDemoLogHostApi

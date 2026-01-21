@@ -515,7 +515,8 @@ static class Program
             sb.AppendLine("    /// </summary>");
             sb.AppendLine("    public static class BridgeAllCommandDispatcher");
             sb.AppendLine("    {");
-            sb.AppendLine("        public static unsafe void DispatchFast(CommandStream stream, BridgeAllHostApiBase host)");
+            sb.AppendLine("        public static unsafe void DispatchFast<THost>(CommandStream stream, THost host)");
+            sb.AppendLine("            where THost : BridgeAllHostApiBase");
             sb.AppendLine("        {");
             sb.AppendLine("            if (host == null || stream.Ptr == System.IntPtr.Zero || stream.Length == 0)");
             sb.AppendLine("                return;");
@@ -594,6 +595,9 @@ static class Program
             sb.AppendLine("                cursor += size;");
             sb.AppendLine("            }");
             sb.AppendLine("        }");
+            sb.AppendLine();
+            sb.AppendLine("        public static unsafe void DispatchFast(CommandStream stream, BridgeAllHostApiBase host)");
+            sb.AppendLine("            => DispatchFast<BridgeAllHostApiBase>(stream, host);");
             sb.AppendLine();
             sb.AppendLine("        public static unsafe void Dispatch<THost>(CommandStream stream, THost host)");
             sb.Append("            where THost : class");
