@@ -81,7 +81,6 @@ powershell -ExecutionPolicy Bypass -File Tools/RunPerf.ps1 -Bots 1000 -Frames 30
 <!-- PERF_TABLE_START -->
 | tsUtc | runId | tag | git | robothost_null cmd/s | robot_runner cmd/s | robot_runner ticks/s | il2cpp_source 1k ticks/s | il2cpp_source 10k ticks/s |
 |---|---|---|---|---:|---:|---:|---:|---:|
-| 2026-01-21T09:50:23.6962380Z | 20260121_175019 | readme_table_test | 23e79d6* | 53571 | 2000000 | n/a | n/a | n/a |
 | 2026-01-21T09:46:22.1895560Z | 20260121_174537 | post_23e79d6 | 23e79d6 | 23447208 | 58632532 | 58823529.41 | 50646588.11 | 32289520.76 |
 | 2026-01-21T09:41:02.1140619Z | 20260121_174007 | il2cpp_opt4_revert_typed | 46c54af* | 24891834 | 56602493 | 56603773.58 | 50043370.92 | 31107456.56 |
 | 2026-01-21T09:37:31.9048310Z | 20260121_173649 | il2cpp_opt4_rerun | 46c54af* | 25635026 | 61322383 | 61224489.80 | 48721863.12 | 31246354.59 |
