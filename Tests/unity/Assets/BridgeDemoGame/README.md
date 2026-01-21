@@ -38,13 +38,14 @@ cmake --build build --config Release
 - 环境变量 `BRIDGE_CORE_DLL`：可指定源 `bridge_core.dll` 的绝对路径（优先级最高）
 - `DemoGameUnityRunner.Bots`：多实例（超过 `MaxBotsWithRendering` 会自动关闭渲染命令）
 
-## 测试 / 性能（RuntimeUnitTestToolkit + IL2CPP 源码模式）
+## 测试（RuntimeUnitTestToolkit）
 
 工程已引入 `com.cysharp.runtimeunittesttoolkit`，用于在 **Player** 下运行 NUnit 测试（可用于 Mono / IL2CPP）。
 
-其中吞吐测试会输出类似：
+我们按后端分两类：
 
-- `##bridgeperf: mode=il2cpp_source ...`
+- **IL2CPP Player（源码插件）**：只看吞吐/性能（`##bridgeperf: ...`）
+- **Mono Player（DLL 插件）**：只看 GC 分配（`##bridgegc: ...`）
 
 ### IL2CPP（源码插件）跑测试
 
@@ -53,21 +54,50 @@ cmake --build build --config Release
 ```powershell
 $unity = "C:\Program Files\Unity\Hub\Editor\6000.0.40f1\Editor\Unity.exe"
 $proj  = "D:\UGit\UnityNativeScripting\Tests\unity"
-$out   = "D:\UGit\UnityNativeScripting\build\ruttt_il2cpp\test.exe"
+$out   = "D:\UGit\UnityNativeScripting\build\ruttt_il2cpp_source\test.exe"
 
 & $unity -quit -batchmode -nographics `
   -projectPath $proj `
   -executeMethod Bridge.Core.Unity.Editor.BridgeCoreRuntimeUnitTestBuild.BuildUnitTest `
   /ScriptBackend IL2CPP /BuildTarget StandaloneWindows64 /buildPath $out `
-  -logFile "D:\UGit\UnityNativeScripting\build\ruttt_il2cpp\build.log"
+  -logFile "D:\UGit\UnityNativeScripting\build\ruttt_il2cpp_source\build.log"
 
-& $out -batchmode -nographics -logFile "D:\UGit\UnityNativeScripting\build\ruttt_il2cpp\run.log"
+& $out -batchmode -nographics -logFile "D:\UGit\UnityNativeScripting\build\ruttt_il2cpp_source\run.log"
 ```
 
 说明：
 
 - `BuildUnitTest` 会在 IL2CPP 下自动执行 `BridgeCore/Windows/Sync C++ Sources`，把 C++ 源码同步到 `Assets/Plugins/x86_64/BridgeCoreSource`，并在 Player Build 时编进 `GameAssembly.dll`。
-- 这些测试位于 `Assets/BridgeDemoGame/PlayModeTests/`（例如 `BridgeRuntimeSmokeTests` / `BridgeSourceModeThroughputTests`）。
+- 这些测试位于 `Assets/BridgeDemoGame/PlayModeTests/`（例如 `BridgeRuntimeSmokeTests` / `BridgeSourceModeThroughputTests`）。吞吐结果会输出：`##bridgeperf: mode=il2cpp_source ...`
+
+### Mono（DLL 插件）跑测试（GC）
+
+命令行（Windows / PowerShell）：
+
+```powershell
+$unity = "C:\Program Files\Unity\Hub\Editor\6000.0.40f1\Editor\Unity.exe"
+$proj  = "D:\UGit\UnityNativeScripting\Tests\unity"
+$out   = "D:\UGit\UnityNativeScripting\build\ruttt_mono\test.exe"
+
+& $unity -quit -batchmode -nographics `
+  -projectPath $proj `
+  -executeMethod Bridge.Core.Unity.Editor.BridgeCoreRuntimeUnitTestBuild.BuildUnitTest `
+  /ScriptBackend Mono2x /BuildTarget StandaloneWindows64 /buildPath $out `
+  -logFile "D:\UGit\UnityNativeScripting\build\ruttt_mono\build.log"
+
+Push-Location (Split-Path $out)
+& .\test.exe -batchmode -nographics -logFile "D:\UGit\UnityNativeScripting\build\ruttt_mono\run.log"
+Pop-Location
+```
+
+说明：
+
+- `BuildUnitTest` 会在 Mono 下自动执行 `BridgeCore/Windows/Sync bridge_core.dll (for Player)`，把 `build/bin/Release/bridge_core.dll` 同步为 Unity 的 Player 插件。
+- GC 测试位于 `Assets/BridgeDemoGame/PlayModeTests/BridgeMonoGcTests.cs`，结果会输出：`##bridgegc: mode=mono ...`
+
+注意：
+
+- Mono Player 运行时需要把工作目录设为 build 输出目录（包含 `MonoBleedingEdge/`），否则可能无法启动或无法输出日志。
 
 注意：
 

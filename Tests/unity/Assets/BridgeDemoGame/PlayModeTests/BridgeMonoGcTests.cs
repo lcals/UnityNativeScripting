@@ -1,19 +1,17 @@
-#if ENABLE_IL2CPP
+#if !ENABLE_IL2CPP
 using System;
-using System.Collections;
 using System.Diagnostics;
 using Bridge.Bindings;
 using Bridge.Core;
 using DemoAsset.Bindings;
 using DemoEntity.Bindings;
 using DemoLog.Bindings;
-using Debug = UnityEngine.Debug;
 using NUnit.Framework;
-using UnityEngine.TestTools;
+using Debug = UnityEngine.Debug;
 
 namespace BridgeDemoGame.PlayModeTests
 {
-    public sealed class BridgeSourceModeThroughputTests
+    public sealed class BridgeMonoGcTests
     {
         private sealed class NullHostApi : IDemoAssetHostApi, IDemoEntityHostApi, IDemoLogHostApi
         {
@@ -58,39 +56,50 @@ namespace BridgeDemoGame.PlayModeTests
             }
         }
 
-        [UnityTest]
-        public IEnumerator TickManyAndDispatch_Throughput_1Bot()
+        [Test]
+        public void TickAndDispatch_NoGcAlloc_1Bot()
         {
-            RunThroughput(bots: 1);
-            yield break;
-        }
-
-        [UnityTest]
-        public IEnumerator TickManyAndDispatch_Throughput_1kBots()
-        {
-            RunThroughput(bots: 1000);
-            yield break;
-        }
-
-        [UnityTest]
-        public IEnumerator TickManyAndDispatch_Throughput_10kBots()
-        {
-            RunThroughput(bots: 10000);
-            yield break;
-        }
-
-        private static void RunThroughput(int bots)
-        {
-            if (bots <= 0)
-                throw new ArgumentOutOfRangeException(nameof(bots));
-
             const int warmupFrames = 60;
-            const int measureFrames = 300;
+            const int measureFrames = 600;
+            const float dt = 1.0f / 60.0f;
+
+            using (var core = new BridgeCore(seed: 1, robotMode: true))
+            {
+                var host = new NullHostApi(core);
+
+                RunSingleCoreFrames(core, host, warmupFrames, dt, out _);
+
+                CollectAndWait();
+                long allocBefore = GC.GetAllocatedBytesForCurrentThread();
+
+                var sw = Stopwatch.StartNew();
+                RunSingleCoreFrames(core, host, measureFrames, dt, out ulong totalBytes);
+                sw.Stop();
+
+                long allocAfter = GC.GetAllocatedBytesForCurrentThread();
+                long allocBytes = allocAfter - allocBefore;
+
+                Debug.Log(string.Format(
+                    "##bridgegc: mode=mono alloc_bytes={0} bots=1 frames={1} elapsed_ms={2:0.00} total_bytes={3}",
+                    allocBytes,
+                    measureFrames,
+                    sw.Elapsed.TotalMilliseconds,
+                    totalBytes));
+
+                if (allocBytes != 0)
+                    throw new Exception("GC allocated bytes != 0: " + allocBytes);
+            }
+        }
+
+        [Test]
+        public void TickManyAndDispatch_NoGcAlloc_10000Bots()
+        {
+            const int bots = 10000;
+            const int warmupFrames = 10;
+            const int measureFrames = 60;
             const float dt = 1.0f / 60.0f;
 
             BridgeCore.PrepareTickManyCache(bots);
-
-            Debug.Log("BridgeSourceModeThroughputTests: start bots=" + bots);
 
             var cores = new BridgeCore[bots];
             var hosts = new NullHostApi[bots];
@@ -105,39 +114,28 @@ namespace BridgeDemoGame.PlayModeTests
 
             try
             {
-                RunFrames(cores, hosts, streams, warmupFrames, dt, out _);
+                RunManyCoreFrames(cores, hosts, streams, warmupFrames, dt, out _);
 
-                bool allocSupported = false;
-                long allocBefore = 0;
-#if !ENABLE_IL2CPP || UNITY_EDITOR
-                allocBefore = TryGetAllocatedBytesForCurrentThread(out allocSupported);
-#endif
+                CollectAndWait();
+                long allocBefore = GC.GetAllocatedBytesForCurrentThread();
+
                 var sw = Stopwatch.StartNew();
-                RunFrames(cores, hosts, streams, measureFrames, dt, out ulong totalBytes);
+                RunManyCoreFrames(cores, hosts, streams, measureFrames, dt, out ulong totalBytes);
                 sw.Stop();
 
-                long allocAfter = 0;
-#if !ENABLE_IL2CPP || UNITY_EDITOR
-                allocAfter = allocSupported ? TryGetAllocatedBytesForCurrentThread(out _) : 0;
-#endif
-
-                double seconds = Math.Max(1e-9, sw.Elapsed.TotalSeconds);
-                double ticks = (double)bots * measureFrames;
-                double ticksPerSecond = ticks / seconds;
-                double mibPerSecond = (totalBytes / (1024.0 * 1024.0)) / seconds;
-                long allocBytes = allocSupported ? (allocAfter - allocBefore) : -1;
+                long allocAfter = GC.GetAllocatedBytesForCurrentThread();
+                long allocBytes = allocAfter - allocBefore;
 
                 Debug.Log(string.Format(
-                    "##bridgeperf: mode=il2cpp_source ticks_per_sec={0:0.00} mib_per_sec={1:0.00} bots={2} frames={3} elapsed_ms={4:0.00} alloc_bytes={5} total_bytes={6}",
-                    ticksPerSecond,
-                    mibPerSecond,
+                    "##bridgegc: mode=mono alloc_bytes={0} bots={1} frames={2} elapsed_ms={3:0.00} total_bytes={4}",
+                    allocBytes,
                     bots,
                     measureFrames,
                     sw.Elapsed.TotalMilliseconds,
-                    allocBytes,
                     totalBytes));
 
-                Debug.Log("BridgeSourceModeThroughputTests: done bots=" + bots);
+                if (allocBytes != 0)
+                    throw new Exception("GC allocated bytes != 0: " + allocBytes);
             }
             finally
             {
@@ -146,7 +144,18 @@ namespace BridgeDemoGame.PlayModeTests
             }
         }
 
-        private static void RunFrames(
+        private static void RunSingleCoreFrames(BridgeCore core, NullHostApi host, int frames, float dt, out ulong totalBytes)
+        {
+            totalBytes = 0;
+            for (int i = 0; i < frames; i++)
+            {
+                CommandStream stream = core.TickAndGetCommandStream(dt);
+                totalBytes += stream.Length;
+                BridgeAllCommandDispatcher.Dispatch(stream, host);
+            }
+        }
+
+        private static void RunManyCoreFrames(
             BridgeCore[] cores,
             NullHostApi[] hosts,
             CommandStream[] streams,
@@ -155,7 +164,6 @@ namespace BridgeDemoGame.PlayModeTests
             out ulong totalBytes)
         {
             totalBytes = 0;
-
             for (int frame = 0; frame < frames; frame++)
             {
                 BridgeCore.TickManyAndGetCommandStreams(cores, dt, streams);
@@ -168,18 +176,11 @@ namespace BridgeDemoGame.PlayModeTests
             }
         }
 
-        private static long TryGetAllocatedBytesForCurrentThread(out bool supported)
+        private static void CollectAndWait()
         {
-            try
-            {
-                supported = true;
-                return GC.GetAllocatedBytesForCurrentThread();
-            }
-            catch
-            {
-                supported = false;
-                return 0;
-            }
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
         }
     }
 }

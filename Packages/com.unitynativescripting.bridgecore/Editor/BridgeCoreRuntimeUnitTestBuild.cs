@@ -22,6 +22,9 @@ namespace Bridge.Core.Unity.Editor
 			else
 				BridgeCoreWinSync.SyncForPlayer();
 
+			// 确保 AssetDatabase 与磁盘状态一致（尤其是批处理模式下的“外部删除/新增脚本文件”）。
+			AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
+
 #if UNITY_2021_2_OR_NEWER
 			// RuntimeUnitTestToolkit 的 /Headless 会走 Dedicated Server 子目标。
 			// 这里强制回到普通 Player，避免环境里残留 Server 子目标导致构建失败。
