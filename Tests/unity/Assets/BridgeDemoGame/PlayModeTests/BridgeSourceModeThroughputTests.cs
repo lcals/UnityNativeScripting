@@ -176,7 +176,7 @@ namespace BridgeDemoGame.PlayModeTests
                         {
                             CommandStream stream = streamsPtr[i];
                             totalBytes += stream.Length;
-                            BridgeAllCommandDispatcher.DispatchFast(stream, hosts[i]);
+                            BridgeAllCommandDispatcher.DispatchFastUnchecked(stream, hosts[i]);
                         }
                     }
                 }

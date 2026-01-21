@@ -74,7 +74,7 @@ namespace BridgeDemoGame.PlayModeTests
                 {
                     var stream = core.TickAndGetCommandStream(1.0f / 60.0f);
 #if ENABLE_IL2CPP
-                    BridgeAllCommandDispatcher.DispatchFast(stream, host);
+                    BridgeAllCommandDispatcher.DispatchFastUnchecked(stream, host);
 #else
                     BridgeAllCommandDispatcher.Dispatch(stream, host);
 #endif

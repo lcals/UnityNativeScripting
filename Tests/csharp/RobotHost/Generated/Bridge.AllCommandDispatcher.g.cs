@@ -117,6 +117,75 @@ namespace Bridge.Bindings
             }
         }
 
+        public static unsafe void DispatchFastUnchecked<THost>(CommandStream stream, THost host)
+            where THost : BridgeAllHostApiBase
+        {
+            if (host == null || stream.Ptr == System.IntPtr.Zero || stream.Length == 0)
+                return;
+
+            byte* cursor = (byte*)stream.Ptr;
+            byte* end = cursor + (int)stream.Length;
+
+            while (cursor < end)
+            {
+                int remaining = (int)(end - cursor);
+                if (remaining < (int)sizeof(BridgeCmdCallHost))
+                    break;
+
+                var cmd = (BridgeCmdCallHost*)cursor;
+                int size = cmd->Header.Size;
+                if ((uint)size < (uint)sizeof(BridgeCmdCallHost) || (uint)size > (uint)remaining)
+                    break;
+
+                byte* payloadPtr = cursor + sizeof(BridgeCmdCallHost);
+
+                switch (cmd->FuncId)
+                {
+                    case 0x82A5E93Au:
+                    {
+                        ref readonly DemoAsset.Bindings.HostArgs_LoadAsset a = ref *((DemoAsset.Bindings.HostArgs_LoadAsset*)payloadPtr);
+                        host.LoadAsset(a.RequestId, a.AssetType, a.AssetKey);
+                        break;
+                    }
+                    case 0xBCAA331Du:
+                    {
+                        ref readonly DemoEntity.Bindings.HostArgs_SpawnEntity a = ref *((DemoEntity.Bindings.HostArgs_SpawnEntity*)payloadPtr);
+                        host.SpawnEntity(a.EntityId, a.PrefabHandle, in a.Transform, a.Flags);
+                        break;
+                    }
+                    case 0x20DA0B6Fu:
+                    {
+                        ref readonly DemoEntity.Bindings.HostArgs_SetTransform a = ref *((DemoEntity.Bindings.HostArgs_SetTransform*)payloadPtr);
+                        host.SetTransform(a.EntityId, a.Mask, in a.Transform);
+                        break;
+                    }
+                    case 0x5B16AE9Eu:
+                    {
+                        ref readonly DemoEntity.Bindings.HostArgs_SetPosition a = ref *((DemoEntity.Bindings.HostArgs_SetPosition*)payloadPtr);
+                        host.SetPosition(a.EntityId, a.Position);
+                        break;
+                    }
+                    case 0xC7C1C59Cu:
+                    {
+                        ref readonly DemoEntity.Bindings.HostArgs_DestroyEntity a = ref *((DemoEntity.Bindings.HostArgs_DestroyEntity*)payloadPtr);
+                        host.DestroyEntity(a.EntityId);
+                        break;
+                    }
+                    case 0xDA3184A2u:
+                    {
+                        ref readonly DemoLog.Bindings.HostArgs_Log a = ref *((DemoLog.Bindings.HostArgs_Log*)payloadPtr);
+                        host.Log(a.Level, a.Message);
+                        break;
+                    }
+                }
+
+                cursor += size;
+            }
+        }
+
+        public static unsafe void DispatchFastUnchecked(CommandStream stream, BridgeAllHostApiBase host)
+            => DispatchFastUnchecked<BridgeAllHostApiBase>(stream, host);
+
         public static unsafe void DispatchFast(CommandStream stream, BridgeAllHostApiBase host)
             => DispatchFast<BridgeAllHostApiBase>(stream, host);
 

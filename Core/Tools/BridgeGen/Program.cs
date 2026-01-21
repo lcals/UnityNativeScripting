@@ -596,6 +596,77 @@ static class Program
             sb.AppendLine("            }");
             sb.AppendLine("        }");
             sb.AppendLine();
+
+            sb.AppendLine("        public static unsafe void DispatchFastUnchecked<THost>(CommandStream stream, THost host)");
+            sb.AppendLine("            where THost : BridgeAllHostApiBase");
+            sb.AppendLine("        {");
+            sb.AppendLine("            if (host == null || stream.Ptr == System.IntPtr.Zero || stream.Length == 0)");
+            sb.AppendLine("                return;");
+            sb.AppendLine();
+            sb.AppendLine("            byte* cursor = (byte*)stream.Ptr;");
+            sb.AppendLine("            byte* end = cursor + (int)stream.Length;");
+            sb.AppendLine();
+            sb.AppendLine("            while (cursor < end)");
+            sb.AppendLine("            {");
+            sb.AppendLine("                int remaining = (int)(end - cursor);");
+            sb.AppendLine("                if (remaining < (int)sizeof(BridgeCmdCallHost))");
+            sb.AppendLine("                    break;");
+            sb.AppendLine();
+            sb.AppendLine("                var cmd = (BridgeCmdCallHost*)cursor;");
+            sb.AppendLine("                int size = cmd->Header.Size;");
+            sb.AppendLine("                if ((uint)size < (uint)sizeof(BridgeCmdCallHost) || (uint)size > (uint)remaining)");
+            sb.AppendLine("                    break;");
+            sb.AppendLine();
+            sb.AppendLine("                byte* payloadPtr = cursor + sizeof(BridgeCmdCallHost);");
+            sb.AppendLine();
+            sb.AppendLine("                switch (cmd->FuncId)");
+            sb.AppendLine("                {");
+
+            foreach (var m in modules)
+            {
+                if (m.Model.HostFns.Count == 0)
+                    continue;
+
+                foreach (var fn in m.Model.HostFns)
+                {
+                    uint id = ComputeHostFuncId(m.Module, fn.Name);
+                    sb.AppendLine($"                    case 0x{id:X8}u:");
+                    sb.AppendLine("                    {");
+                    sb.Append("                        ref readonly ");
+                    sb.Append(m.CsNamespace);
+                    sb.Append(".HostArgs_");
+                    sb.Append(fn.Name);
+                    sb.Append(" a = ref *((");
+                    sb.Append(m.CsNamespace);
+                    sb.Append(".HostArgs_");
+                    sb.Append(fn.Name);
+                    sb.AppendLine("*)payloadPtr);");
+                    sb.Append("                        host.");
+                    sb.Append(fn.Name);
+                    sb.Append('(');
+                    for (int i = 0; i < fn.Args.Count; i++)
+                    {
+                        if (i > 0) sb.Append(", ");
+                        var arg = fn.Args[i];
+                        string field = $"a.{ToPascal(arg.Name)}";
+                        sb.Append(MapCsHostArgExpr(arg.CppType, field));
+                    }
+                    sb.AppendLine(");");
+                    sb.AppendLine("                        break;");
+                    sb.AppendLine("                    }");
+                }
+            }
+
+            sb.AppendLine("                }");
+            sb.AppendLine();
+            sb.AppendLine("                cursor += size;");
+            sb.AppendLine("            }");
+            sb.AppendLine("        }");
+            sb.AppendLine();
+            sb.AppendLine("        public static unsafe void DispatchFastUnchecked(CommandStream stream, BridgeAllHostApiBase host)");
+            sb.AppendLine("            => DispatchFastUnchecked<BridgeAllHostApiBase>(stream, host);");
+            sb.AppendLine();
+
             sb.AppendLine("        public static unsafe void DispatchFast(CommandStream stream, BridgeAllHostApiBase host)");
             sb.AppendLine("            => DispatchFast<BridgeAllHostApiBase>(stream, host);");
             sb.AppendLine();

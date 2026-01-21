@@ -54,7 +54,7 @@ namespace BridgeDemoGame
             for (int i = 0; i < _cores.Length; i++)
             {
 #if ENABLE_IL2CPP
-                BridgeAllCommandDispatcher.DispatchFast(_streams[i], _hosts[i]);
+                BridgeAllCommandDispatcher.DispatchFastUnchecked(_streams[i], _hosts[i]);
 #else
                 BridgeAllCommandDispatcher.Dispatch(_streams[i], _hosts[i]);
 #endif
