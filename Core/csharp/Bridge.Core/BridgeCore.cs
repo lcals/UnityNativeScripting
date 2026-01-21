@@ -102,11 +102,14 @@ namespace Bridge.Core
                 if (result != BridgeResult.Ok)
                     throw new InvalidOperationException($"BridgeCore_TickManyAndGetCommandStreams failed: {result}");
 
-                for (int i = 0; i < count; i++)
+                fixed (CommandStream* dst = streams)
                 {
-                    IntPtr ptr = outPtrs[i];
-                    uint len = outLens[i];
-                    streams[i] = (ptr == IntPtr.Zero || len == 0) ? CommandStream.Empty : new CommandStream(ptr, len);
+                    for (int i = 0; i < count; i++)
+                    {
+                        IntPtr ptr = outPtrs[i];
+                        uint len = outLens[i];
+                        dst[i] = (ptr == IntPtr.Zero || len == 0) ? default : new CommandStream(ptr, len);
+                    }
                 }
             }
             else
@@ -127,17 +130,18 @@ namespace Bridge.Core
                 fixed (IntPtr* corePtrs = corePtrsManaged)
                 fixed (IntPtr* outPtrs = outPtrsManaged)
                 fixed (uint* outLens = outLensManaged)
+                fixed (CommandStream* dst = streams)
                 {
                     var result = BridgeNative.BridgeCore_TickManyAndGetCommandStreams(corePtrs, (uint)count, dt, outPtrs, outLens);
                     if (result != BridgeResult.Ok)
                         throw new InvalidOperationException($"BridgeCore_TickManyAndGetCommandStreams failed: {result}");
-                }
 
-                for (int i = 0; i < count; i++)
-                {
-                    IntPtr ptr = outPtrsManaged[i];
-                    uint len = outLensManaged[i];
-                    streams[i] = (ptr == IntPtr.Zero || len == 0) ? CommandStream.Empty : new CommandStream(ptr, len);
+                    for (int i = 0; i < count; i++)
+                    {
+                        IntPtr ptr = outPtrs[i];
+                        uint len = outLens[i];
+                        dst[i] = (ptr == IntPtr.Zero || len == 0) ? default : new CommandStream(ptr, len);
+                    }
                 }
             }
         }
@@ -166,11 +170,14 @@ namespace Bridge.Core
                     if (result != BridgeResult.Ok)
                         throw new InvalidOperationException($"BridgeCore_TickManyAndGetCommandStreams failed: {result}");
 
-                    for (int i = 0; i < count; i++)
+                    fixed (CommandStream* dst = streams)
                     {
-                        IntPtr ptr = outPtrs[i];
-                        uint len = outLens[i];
-                        streams[i] = (ptr == IntPtr.Zero || len == 0) ? CommandStream.Empty : new CommandStream(ptr, len);
+                        for (int i = 0; i < count; i++)
+                        {
+                            IntPtr ptr = outPtrs[i];
+                            uint len = outLens[i];
+                            dst[i] = (ptr == IntPtr.Zero || len == 0) ? default : new CommandStream(ptr, len);
+                        }
                     }
                 }
             }
@@ -184,17 +191,18 @@ namespace Bridge.Core
                 fixed (IntPtr* corePtrs = coreHandles)
                 fixed (IntPtr* outPtrs = outPtrsManaged)
                 fixed (uint* outLens = outLensManaged)
+                fixed (CommandStream* dst = streams)
                 {
                     var result = BridgeNative.BridgeCore_TickManyAndGetCommandStreams(corePtrs, (uint)count, dt, outPtrs, outLens);
                     if (result != BridgeResult.Ok)
                         throw new InvalidOperationException($"BridgeCore_TickManyAndGetCommandStreams failed: {result}");
-                }
 
-                for (int i = 0; i < count; i++)
-                {
-                    IntPtr ptr = outPtrsManaged[i];
-                    uint len = outLensManaged[i];
-                    streams[i] = (ptr == IntPtr.Zero || len == 0) ? CommandStream.Empty : new CommandStream(ptr, len);
+                    for (int i = 0; i < count; i++)
+                    {
+                        IntPtr ptr = outPtrs[i];
+                        uint len = outLens[i];
+                        dst[i] = (ptr == IntPtr.Zero || len == 0) ? default : new CommandStream(ptr, len);
+                    }
                 }
             }
         }

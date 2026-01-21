@@ -517,7 +517,7 @@ static class Program
             sb.AppendLine("    {");
             sb.AppendLine("        public static unsafe void DispatchFast(CommandStream stream, BridgeAllHostApiBase host)");
             sb.AppendLine("        {");
-            sb.AppendLine("            if (stream.IsEmpty || host == null)");
+            sb.AppendLine("            if (host == null || stream.Ptr == System.IntPtr.Zero || stream.Length == 0)");
             sb.AppendLine("                return;");
             sb.AppendLine();
             sb.AppendLine("            byte* cursor = (byte*)stream.Ptr;");

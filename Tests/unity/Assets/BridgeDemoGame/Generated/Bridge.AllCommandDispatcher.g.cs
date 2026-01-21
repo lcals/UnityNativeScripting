@@ -26,7 +26,7 @@ namespace Bridge.Bindings
     {
         public static unsafe void DispatchFast(CommandStream stream, BridgeAllHostApiBase host)
         {
-            if (stream.IsEmpty || host == null)
+            if (host == null || stream.Ptr == System.IntPtr.Zero || stream.Length == 0)
                 return;
 
             byte* cursor = (byte*)stream.Ptr;
