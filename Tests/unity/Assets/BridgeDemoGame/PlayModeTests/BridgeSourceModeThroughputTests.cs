@@ -15,7 +15,7 @@ namespace BridgeDemoGame.PlayModeTests
 {
     public sealed class BridgeSourceModeThroughputTests
     {
-        private sealed class NullHostApi : IDemoAssetHostApi, IDemoEntityHostApi, IDemoLogHostApi
+        private sealed class NullHostApi : BridgeAllHostApiBase
         {
             private readonly BridgeCore _core;
 
@@ -24,14 +24,14 @@ namespace BridgeDemoGame.PlayModeTests
                 _core = core;
             }
 
-            public void LoadAsset(ulong requestId, BridgeAssetType assetType, BridgeStringView assetKey)
+            public override void LoadAsset(ulong requestId, BridgeAssetType assetType, BridgeStringView assetKey)
             {
                 _ = assetType;
                 _ = assetKey;
                 _core.AssetLoaded(requestId, handle: 1, BridgeAssetStatus.Ok);
             }
 
-            public void SpawnEntity(ulong entityId, ulong prefabHandle, in BridgeTransform transform, uint flags)
+            public override void SpawnEntity(ulong entityId, ulong prefabHandle, in BridgeTransform transform, uint flags)
             {
                 _ = entityId;
                 _ = prefabHandle;
@@ -39,19 +39,19 @@ namespace BridgeDemoGame.PlayModeTests
                 _ = flags;
             }
 
-            public void SetTransform(ulong entityId, uint mask, in BridgeTransform transform)
+            public override void SetTransform(ulong entityId, uint mask, in BridgeTransform transform)
             {
                 _ = entityId;
                 _ = mask;
                 _ = transform;
             }
 
-            public void DestroyEntity(ulong entityId)
+            public override void DestroyEntity(ulong entityId)
             {
                 _ = entityId;
             }
 
-            public void Log(BridgeLogLevel level, BridgeStringView message)
+            public override void Log(BridgeLogLevel level, BridgeStringView message)
             {
                 _ = level;
                 _ = message;
@@ -93,6 +93,7 @@ namespace BridgeDemoGame.PlayModeTests
             Debug.Log("BridgeSourceModeThroughputTests: start bots=" + bots);
 
             var cores = new BridgeCore[bots];
+            var coreHandles = new IntPtr[bots];
             var hosts = new NullHostApi[bots];
             var streams = new CommandStream[bots];
 
@@ -100,12 +101,13 @@ namespace BridgeDemoGame.PlayModeTests
             {
                 var core = new BridgeCore(seed: (ulong)(i + 1), robotMode: true);
                 cores[i] = core;
+                coreHandles[i] = core.UnsafeHandle;
                 hosts[i] = new NullHostApi(core);
             }
 
             try
             {
-                RunFrames(cores, hosts, streams, warmupFrames, dt, out _);
+                RunFrames(coreHandles, hosts, streams, warmupFrames, dt, out _);
 
                 bool allocSupported = false;
                 long allocBefore = 0;
@@ -113,7 +115,7 @@ namespace BridgeDemoGame.PlayModeTests
                 allocBefore = TryGetAllocatedBytesForCurrentThread(out allocSupported);
 #endif
                 var sw = Stopwatch.StartNew();
-                RunFrames(cores, hosts, streams, measureFrames, dt, out ulong totalBytes);
+                RunFrames(coreHandles, hosts, streams, measureFrames, dt, out ulong totalBytes);
                 sw.Stop();
 
                 long allocAfter = 0;
@@ -147,7 +149,7 @@ namespace BridgeDemoGame.PlayModeTests
         }
 
         private static void RunFrames(
-            BridgeCore[] cores,
+            IntPtr[] coreHandles,
             NullHostApi[] hosts,
             CommandStream[] streams,
             int frames,
@@ -158,12 +160,12 @@ namespace BridgeDemoGame.PlayModeTests
 
             for (int frame = 0; frame < frames; frame++)
             {
-                BridgeCore.TickManyAndGetCommandStreams(cores, dt, streams);
-                for (int i = 0; i < cores.Length; i++)
+                BridgeCore.TickManyAndGetCommandStreams(coreHandles, dt, streams);
+                for (int i = 0; i < coreHandles.Length; i++)
                 {
                     CommandStream stream = streams[i];
                     totalBytes += stream.Length;
-                    BridgeAllCommandDispatcher.Dispatch(stream, hosts[i]);
+                    BridgeAllCommandDispatcher.DispatchFast(stream, hosts[i]);
                 }
             }
         }

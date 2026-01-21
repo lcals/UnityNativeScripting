@@ -4,6 +4,12 @@
 # Unity upgrade logs
 Tests/unity/Logs
 
+# Unity performance test framework (generated)
+Tests/unity/Assets/Resources/PerformanceTestRunInfo.json
+Tests/unity/Assets/Resources/PerformanceTestRunInfo.json.meta
+Tests/unity/Assets/Resources/PerformanceTestRunSettings.json
+Tests/unity/Assets/Resources/PerformanceTestRunSettings.json.meta
+
 # Build outputs
 build/
 Core/**/bin/

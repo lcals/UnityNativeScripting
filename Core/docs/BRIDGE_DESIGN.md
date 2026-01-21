@@ -95,7 +95,8 @@ Host 侧拿到 Core 输出的 `CommandStream` 后，需要把 `CallHost(func_id,
 为性能与 Unity/IL2CPP 友好，本仓库只保留一种分发策略（不依赖 native→managed 回调）：
 
 - **单次扫描聚合分发（all）**
-  - 生成 `Bridge.Bindings.BridgeAllCommandDispatcher.Dispatch(stream, host)`
+  - 生成 `Bridge.Bindings.BridgeAllCommandDispatcher.DispatchFast(stream, host)`（建议：host 继承 `Bridge.Bindings.BridgeAllHostApiBase`，IL2CPP 下更快）
+  - 同时保留 `Bridge.Bindings.BridgeAllCommandDispatcher.Dispatch(stream, host)`（接口约束泛型版本，便于旧代码/多态）
   - 单 pass 扫描，并按 `func_id` 分发到各模块 Host API
   - 模块化的边界仍然体现在：`I<Module>HostApi` / `*.Structs.g.cs` / `*.CoreCalls.g.cs`
 
@@ -104,6 +105,7 @@ Host 侧拿到 Core 输出的 `CommandStream` 后，需要把 `CallHost(func_id,
 - 分发器使用 `unsafe` + `sizeof(T)` + 指针解引用读取 payload，避免 `Marshal.PtrToStructure` 的反射与分配。
 - Host→Core 的 `PushCallCore<T>(payload)` 使用 `unmanaged` 泛型直接传栈上数据指针，避免 `AllocHGlobal`。
 - 为减少 Host 侧 native 调用次数：提供 `BridgeCore_TickAndGetCommandStream` 与 `BridgeCore_TickManyAndGetCommandStreams`。
+- 在 IL2CPP/大规模多实例场景下，推荐缓存 `BridgeCore.UnsafeHandle`，并使用 `TickManyAndGetCommandStreams(IntPtr[] coreHandles, ...)` 避免每帧提取 handle。
 
 ### 基准结果（示例）
 

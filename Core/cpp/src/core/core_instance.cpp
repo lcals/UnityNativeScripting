@@ -64,9 +64,22 @@ namespace bridge
 		cmd.func_id = funcId;
 		cmd.payload_size = payloadSize;
 
-		core_.commands.PushBytes(&cmd, sizeof(cmd));
-		core_.commands.PushBytes(payload, payloadSize);
-		core_.commands.PushZeroBytes(alignedTotal - static_cast<uint32_t>(sizeof(cmd)) - payloadSize);
+		uint8_t* dst = core_.commands.Allocate(static_cast<size_t>(alignedTotal));
+		if (!dst)
+		{
+			return;
+		}
+
+		std::memcpy(dst, &cmd, sizeof(cmd));
+		if (payloadSize > 0)
+		{
+			std::memcpy(dst + sizeof(cmd), payload, payloadSize);
+		}
+		const uint32_t pad = alignedTotal - static_cast<uint32_t>(sizeof(cmd)) - payloadSize;
+		if (pad > 0)
+		{
+			std::memset(dst + sizeof(cmd) + payloadSize, 0, pad);
+		}
 	}
 
 	BridgeTransform CoreContext::IdentityTransform()

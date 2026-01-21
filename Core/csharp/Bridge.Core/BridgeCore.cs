@@ -28,6 +28,15 @@ namespace Bridge.Core
                 throw new InvalidOperationException("BridgeCore_Create returned null");
         }
 
+        public IntPtr UnsafeHandle
+        {
+            get
+            {
+                ThrowIfDisposed();
+                return _handle;
+            }
+        }
+
         /// <summary>
         /// 推进 Core 一帧（或一个逻辑 tick）。
         /// </summary>
@@ -133,6 +142,63 @@ namespace Bridge.Core
             }
         }
 
+        public static unsafe void TickManyAndGetCommandStreams(IntPtr[] coreHandles, float dt, CommandStream[] streams)
+        {
+            if (coreHandles == null)
+                throw new ArgumentNullException(nameof(coreHandles));
+            if (streams == null)
+                throw new ArgumentNullException(nameof(streams));
+            if (streams.Length < coreHandles.Length)
+                throw new ArgumentException("streams.Length must be >= coreHandles.Length", nameof(streams));
+
+            int count = coreHandles.Length;
+            if (count == 0)
+                return;
+
+            if (count <= StackAllocMaxCount)
+            {
+                fixed (IntPtr* corePtrs = coreHandles)
+                {
+                    IntPtr* outPtrs = stackalloc IntPtr[count];
+                    uint* outLens = stackalloc uint[count];
+
+                    var result = BridgeNative.BridgeCore_TickManyAndGetCommandStreams(corePtrs, (uint)count, dt, outPtrs, outLens);
+                    if (result != BridgeResult.Ok)
+                        throw new InvalidOperationException($"BridgeCore_TickManyAndGetCommandStreams failed: {result}");
+
+                    for (int i = 0; i < count; i++)
+                    {
+                        IntPtr ptr = outPtrs[i];
+                        uint len = outLens[i];
+                        streams[i] = (ptr == IntPtr.Zero || len == 0) ? CommandStream.Empty : new CommandStream(ptr, len);
+                    }
+                }
+            }
+            else
+            {
+                EnsureTickManyOutArrays(count);
+
+                IntPtr[] outPtrsManaged = s_tickManyOutPtrs!;
+                uint[] outLensManaged = s_tickManyOutLens!;
+
+                fixed (IntPtr* corePtrs = coreHandles)
+                fixed (IntPtr* outPtrs = outPtrsManaged)
+                fixed (uint* outLens = outLensManaged)
+                {
+                    var result = BridgeNative.BridgeCore_TickManyAndGetCommandStreams(corePtrs, (uint)count, dt, outPtrs, outLens);
+                    if (result != BridgeResult.Ok)
+                        throw new InvalidOperationException($"BridgeCore_TickManyAndGetCommandStreams failed: {result}");
+                }
+
+                for (int i = 0; i < count; i++)
+                {
+                    IntPtr ptr = outPtrsManaged[i];
+                    uint len = outLensManaged[i];
+                    streams[i] = (ptr == IntPtr.Zero || len == 0) ? CommandStream.Empty : new CommandStream(ptr, len);
+                }
+            }
+        }
+
         private static void EnsureTickManyArrays(int count)
         {
             s_tickManyCorePtrs ??= new IntPtr[count];
@@ -140,6 +206,15 @@ namespace Bridge.Core
             s_tickManyOutLens ??= new uint[count];
 
             if (s_tickManyCorePtrs.Length < count) s_tickManyCorePtrs = new IntPtr[count];
+            if (s_tickManyOutPtrs.Length < count) s_tickManyOutPtrs = new IntPtr[count];
+            if (s_tickManyOutLens.Length < count) s_tickManyOutLens = new uint[count];
+        }
+
+        private static void EnsureTickManyOutArrays(int count)
+        {
+            s_tickManyOutPtrs ??= new IntPtr[count];
+            s_tickManyOutLens ??= new uint[count];
+
             if (s_tickManyOutPtrs.Length < count) s_tickManyOutPtrs = new IntPtr[count];
             if (s_tickManyOutLens.Length < count) s_tickManyOutLens = new uint[count];
         }

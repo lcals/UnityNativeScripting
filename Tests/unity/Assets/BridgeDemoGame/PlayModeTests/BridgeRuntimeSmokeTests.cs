@@ -12,7 +12,7 @@ namespace BridgeDemoGame.PlayModeTests
 {
     public sealed class BridgeRuntimeSmokeTests
     {
-        private sealed class NullHostApi : IDemoAssetHostApi, IDemoEntityHostApi, IDemoLogHostApi
+        private sealed class NullHostApi : BridgeAllHostApiBase
         {
             private readonly BridgeCore _core;
 
@@ -21,14 +21,14 @@ namespace BridgeDemoGame.PlayModeTests
                 _core = core;
             }
 
-            public void LoadAsset(ulong requestId, BridgeAssetType assetType, BridgeStringView assetKey)
+            public override void LoadAsset(ulong requestId, BridgeAssetType assetType, BridgeStringView assetKey)
             {
                 _ = assetType;
                 _ = assetKey;
                 _core.AssetLoaded(requestId, handle: 1, BridgeAssetStatus.Ok);
             }
 
-            public void SpawnEntity(ulong entityId, ulong prefabHandle, in BridgeTransform transform, uint flags)
+            public override void SpawnEntity(ulong entityId, ulong prefabHandle, in BridgeTransform transform, uint flags)
             {
                 _ = entityId;
                 _ = prefabHandle;
@@ -36,19 +36,19 @@ namespace BridgeDemoGame.PlayModeTests
                 _ = flags;
             }
 
-            public void SetTransform(ulong entityId, uint mask, in BridgeTransform transform)
+            public override void SetTransform(ulong entityId, uint mask, in BridgeTransform transform)
             {
                 _ = entityId;
                 _ = mask;
                 _ = transform;
             }
 
-            public void DestroyEntity(ulong entityId)
+            public override void DestroyEntity(ulong entityId)
             {
                 _ = entityId;
             }
 
-            public void Log(BridgeLogLevel level, BridgeStringView message)
+            public override void Log(BridgeLogLevel level, BridgeStringView message)
             {
                 _ = level;
                 _ = message;
@@ -67,11 +67,14 @@ namespace BridgeDemoGame.PlayModeTests
                 for (int i = 0; i < 60; i++)
                 {
                     var stream = core.TickAndGetCommandStream(1.0f / 60.0f);
+#if ENABLE_IL2CPP
+                    BridgeAllCommandDispatcher.DispatchFast(stream, host);
+#else
                     BridgeAllCommandDispatcher.Dispatch(stream, host);
+#endif
                     yield return null;
                 }
             }
         }
     }
 }
-

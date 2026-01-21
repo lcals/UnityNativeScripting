@@ -33,14 +33,4 @@ namespace bridge
 		view.len = len;
 		return view;
 	}
-
-	const uint8_t* CommandStream::Data() const
-	{
-		return bytes_.empty() ? nullptr : bytes_.data();
-	}
-
-	uint32_t CommandStream::Size() const
-	{
-		return static_cast<uint32_t>(bytes_.size());
-	}
 }

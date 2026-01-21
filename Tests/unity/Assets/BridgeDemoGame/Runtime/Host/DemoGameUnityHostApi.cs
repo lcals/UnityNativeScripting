@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Bridge.Bindings;
 using Bridge.Core;
 using DemoAsset.Bindings;
 using DemoEntity.Bindings;
@@ -7,7 +8,7 @@ using UnityEngine;
 
 namespace BridgeDemoGame
 {
-    public sealed partial class DemoGameUnityHostApi
+    public sealed partial class DemoGameUnityHostApi : BridgeAllHostApiBase
     {
         private readonly BridgeCore _core;
         private readonly DemoGameUnityAssetService _assets;

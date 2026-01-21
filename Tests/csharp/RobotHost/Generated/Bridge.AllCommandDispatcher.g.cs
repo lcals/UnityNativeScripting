@@ -7,10 +7,105 @@ using Bridge.Core;
 namespace Bridge.Bindings
 {
     /// <summary>
+    /// Host API 基类：用虚函数分发替代接口调用，降低 IL2CPP 下的 dispatch 开销。
+    /// </summary>
+    public abstract class BridgeAllHostApiBase
+        : DemoAsset.Bindings.IDemoAssetHostApi, DemoEntity.Bindings.IDemoEntityHostApi, DemoLog.Bindings.IDemoLogHostApi
+    {
+        public abstract void LoadAsset(ulong requestId, BridgeAssetType assetType, BridgeStringView assetKey);
+        public abstract void SpawnEntity(ulong entityId, ulong prefabHandle, in BridgeTransform transform, uint flags);
+        public abstract void SetTransform(ulong entityId, uint mask, in BridgeTransform transform);
+        public abstract void DestroyEntity(ulong entityId);
+        public abstract void Log(BridgeLogLevel level, BridgeStringView message);
+    }
+
+    /// <summary>
     /// 单次扫描 command stream，并按 func_id 分发到各模块 Host API。
     /// </summary>
     public static class BridgeAllCommandDispatcher
     {
+        public static unsafe void DispatchFast(CommandStream stream, BridgeAllHostApiBase host)
+        {
+            if (stream.IsEmpty || host == null)
+                return;
+
+            byte* cursor = (byte*)stream.Ptr;
+            byte* end = cursor + (int)stream.Length;
+
+            while (cursor < end)
+            {
+                int remaining = (int)(end - cursor);
+                if (remaining < (int)sizeof(BridgeCommandHeader))
+                    break;
+
+                var header = (BridgeCommandHeader*)cursor;
+                int size = header->Size;
+                if ((uint)size < (uint)sizeof(BridgeCommandHeader) || (uint)size > (uint)remaining)
+                    break;
+
+                if (header->Type == (ushort)BridgeCommandType.CallHost && size >= sizeof(BridgeCmdCallHost))
+                {
+                    var cmd = (BridgeCmdCallHost*)cursor;
+                    uint payloadSize = cmd->PayloadSize;
+                    if (payloadSize <= (uint)(size - sizeof(BridgeCmdCallHost)))
+                    {
+                        byte* payloadPtr = cursor + sizeof(BridgeCmdCallHost);
+
+                        switch (cmd->FuncId)
+                        {
+                            case 0x82A5E93Au:
+                            {
+                                if (payloadSize == (uint)sizeof(DemoAsset.Bindings.HostArgs_LoadAsset))
+                                {
+                                    ref readonly DemoAsset.Bindings.HostArgs_LoadAsset a = ref *((DemoAsset.Bindings.HostArgs_LoadAsset*)payloadPtr);
+                                    host.LoadAsset(a.RequestId, a.AssetType, a.AssetKey);
+                                }
+                                break;
+                            }
+                            case 0xBCAA331Du:
+                            {
+                                if (payloadSize == (uint)sizeof(DemoEntity.Bindings.HostArgs_SpawnEntity))
+                                {
+                                    ref readonly DemoEntity.Bindings.HostArgs_SpawnEntity a = ref *((DemoEntity.Bindings.HostArgs_SpawnEntity*)payloadPtr);
+                                    host.SpawnEntity(a.EntityId, a.PrefabHandle, in a.Transform, a.Flags);
+                                }
+                                break;
+                            }
+                            case 0x20DA0B6Fu:
+                            {
+                                if (payloadSize == (uint)sizeof(DemoEntity.Bindings.HostArgs_SetTransform))
+                                {
+                                    ref readonly DemoEntity.Bindings.HostArgs_SetTransform a = ref *((DemoEntity.Bindings.HostArgs_SetTransform*)payloadPtr);
+                                    host.SetTransform(a.EntityId, a.Mask, in a.Transform);
+                                }
+                                break;
+                            }
+                            case 0xC7C1C59Cu:
+                            {
+                                if (payloadSize == (uint)sizeof(DemoEntity.Bindings.HostArgs_DestroyEntity))
+                                {
+                                    ref readonly DemoEntity.Bindings.HostArgs_DestroyEntity a = ref *((DemoEntity.Bindings.HostArgs_DestroyEntity*)payloadPtr);
+                                    host.DestroyEntity(a.EntityId);
+                                }
+                                break;
+                            }
+                            case 0xDA3184A2u:
+                            {
+                                if (payloadSize == (uint)sizeof(DemoLog.Bindings.HostArgs_Log))
+                                {
+                                    ref readonly DemoLog.Bindings.HostArgs_Log a = ref *((DemoLog.Bindings.HostArgs_Log*)payloadPtr);
+                                    host.Log(a.Level, a.Message);
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                cursor += size;
+            }
+        }
+
         public static unsafe void Dispatch<THost>(CommandStream stream, THost host)
             where THost : class, DemoAsset.Bindings.IDemoAssetHostApi, DemoEntity.Bindings.IDemoEntityHostApi, DemoLog.Bindings.IDemoLogHostApi
         {

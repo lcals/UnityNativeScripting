@@ -60,3 +60,16 @@ dotnet run --project Core/Tools/BridgeGen/BridgeGen.csproj -c Release -- --out-c
 - 架构设计：`Core/docs/BRIDGE_DESIGN.md`
 - 构建与运行：`Core/docs/BUILD.md`
 - Unity Windows 原生库加载：`Core/docs/UNITY_WIN_NATIVE_LOADING.md`
+
+## 性能测试（带历史记录）
+
+仓库提供一个 PowerShell 脚本用于跑机器人/Unity 性能用例，并把每次结果追加写入历史文件：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File Tools/RunPerf.ps1 -Bots 1000 -Frames 3000 -Tag "baseline"
+```
+
+- 默认输出：`build/perf_history.jsonl`（每行一条 JSON 记录）
+- 单次 run 的日志/产物：`build/perf_runs/<runId>/`
+- 可选：`-NoUnity` / `-NoUnityEditMode` / `-NoUnityIl2cpp` / `-NoBuild`
+- 可选：`-UnityVersion 6000.0.40f1` 或 `-UnityExe <path>` 用于指定 Unity 版本/路径

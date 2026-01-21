@@ -4,9 +4,9 @@ using UnityEngine;
 
 namespace BridgeDemoGame
 {
-    public sealed partial class DemoGameUnityHostApi : IDemoEntityHostApi
+    public sealed partial class DemoGameUnityHostApi
     {
-        public void SpawnEntity(ulong entityId, ulong prefabHandle, in BridgeTransform transform, uint flags)
+        public override void SpawnEntity(ulong entityId, ulong prefabHandle, in BridgeTransform transform, uint flags)
         {
             _ = prefabHandle;
             _ = flags;
@@ -29,7 +29,7 @@ namespace BridgeDemoGame
             _entities[entityId] = go;
         }
 
-        public void SetTransform(ulong entityId, uint mask, in BridgeTransform transform)
+        public override void SetTransform(ulong entityId, uint mask, in BridgeTransform transform)
         {
             Commands++;
             Transforms++;
@@ -41,7 +41,7 @@ namespace BridgeDemoGame
                 ApplyTransform(go.transform, transform, mask);
         }
 
-        public void DestroyEntity(ulong entityId)
+        public override void DestroyEntity(ulong entityId)
         {
             Commands++;
             Destroys++;

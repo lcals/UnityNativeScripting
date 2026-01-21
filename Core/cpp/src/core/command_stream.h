@@ -26,15 +26,25 @@ namespace bridge
 		// Store UTF-8 bytes and return a view that remains valid until Clear().
 		BridgeStringView StoreUtf8(std::string utf8);
 
+		uint8_t* Allocate(size_t size)
+		{
+			if (size == 0)
+			{
+				return nullptr;
+			}
+			const size_t oldSize = bytes_.size();
+			bytes_.resize(oldSize + size);
+			return bytes_.data() + oldSize;
+		}
+
 		void PushBytes(const void* data, size_t size)
 		{
 			if (!data || size == 0)
 			{
 				return;
 			}
-			const size_t oldSize = bytes_.size();
-			bytes_.resize(oldSize + size);
-			std::memcpy(bytes_.data() + oldSize, data, size);
+			uint8_t* dst = Allocate(size);
+			std::memcpy(dst, data, size);
 		}
 
 		void PushZeroBytes(size_t size)
@@ -43,9 +53,8 @@ namespace bridge
 			{
 				return;
 			}
-			const size_t oldSize = bytes_.size();
-			bytes_.resize(oldSize + size);
-			std::memset(bytes_.data() + oldSize, 0, size);
+			uint8_t* dst = Allocate(size);
+			std::memset(dst, 0, size);
 		}
 
 		template <class T>
@@ -56,13 +65,19 @@ namespace bridge
 			static_assert(sizeof(T) % 8 == 0, "Command size must be 8-byte aligned");
 			static_assert(sizeof(T) <= UINT16_MAX, "Command struct too large for header.size");
 
-			const size_t oldSize = bytes_.size();
-			bytes_.resize(oldSize + sizeof(T));
-			std::memcpy(bytes_.data() + oldSize, &command, sizeof(T));
+			uint8_t* dst = Allocate(sizeof(T));
+			std::memcpy(dst, &command, sizeof(T));
 		}
 
-		const uint8_t* Data() const;
-		uint32_t Size() const;
+		const uint8_t* Data() const
+		{
+			return bytes_.empty() ? nullptr : bytes_.data();
+		}
+
+		uint32_t Size() const
+		{
+			return static_cast<uint32_t>(bytes_.size());
+		}
 
 	private:
 		std::vector<uint8_t> bytes_;

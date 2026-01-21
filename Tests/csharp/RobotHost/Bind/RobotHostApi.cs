@@ -1,7 +1,8 @@
+using Bridge.Bindings;
 using Bridge.Core;
 using DemoAsset.Bindings;
 
-sealed class RobotHostApi : IRobotHostApi
+sealed class RobotHostApi : BridgeAllHostApiBase, IRobotHostApi
 {
     private readonly BridgeCore _core;
     private readonly WorldState _world;
@@ -21,14 +22,14 @@ sealed class RobotHostApi : IRobotHostApi
         _assets = assets;
     }
 
-    public void Log(BridgeLogLevel level, BridgeStringView message)
+    public override void Log(BridgeLogLevel level, BridgeStringView message)
     {
         Commands++;
         Logs++;
         _world.OnLog(level, message);
     }
 
-    public void LoadAsset(ulong requestId, BridgeAssetType assetType, BridgeStringView assetKey)
+    public override void LoadAsset(ulong requestId, BridgeAssetType assetType, BridgeStringView assetKey)
     {
         _ = assetType;
 
@@ -41,21 +42,21 @@ sealed class RobotHostApi : IRobotHostApi
             _core.AssetLoaded(requestId, 0, BridgeAssetStatus.NotFound);
     }
 
-    public void SpawnEntity(ulong entityId, ulong prefabHandle, in BridgeTransform transform, uint flags)
+    public override void SpawnEntity(ulong entityId, ulong prefabHandle, in BridgeTransform transform, uint flags)
     {
         Commands++;
         Spawns++;
         _world.OnSpawn(entityId, prefabHandle, in transform, flags);
     }
 
-    public void SetTransform(ulong entityId, uint mask, in BridgeTransform transform)
+    public override void SetTransform(ulong entityId, uint mask, in BridgeTransform transform)
     {
         Commands++;
         Transforms++;
         _world.OnSetTransform(entityId, mask, in transform);
     }
 
-    public void DestroyEntity(ulong entityId)
+    public override void DestroyEntity(ulong entityId)
     {
         Commands++;
         Destroys++;

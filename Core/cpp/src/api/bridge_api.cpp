@@ -39,12 +39,14 @@ BridgeResult BRIDGE_CALL BridgeCore_TickAndGetCommandStream(
 	const void** out_ptr,
 	uint32_t* out_len)
 {
-	if (!core)
+	if (!core || !out_ptr || !out_len)
 	{
 		return BRIDGE_INVALID_ARGUMENT;
 	}
 	bridge::Tick(*core, dt);
-	return bridge::GetCommandStream(*core, out_ptr, out_len);
+	*out_ptr = core->commands.Data();
+	*out_len = core->commands.Size();
+	return BRIDGE_OK;
 }
 
 BridgeResult BRIDGE_CALL BridgeCore_TickManyAndGetCommandStreams(
@@ -70,7 +72,8 @@ BridgeResult BRIDGE_CALL BridgeCore_TickManyAndGetCommandStreams(
 		}
 
 		bridge::Tick(*core, dt);
-		(void)bridge::GetCommandStream(*core, &out_ptrs[i], &out_lens[i]);
+		out_ptrs[i] = core->commands.Data();
+		out_lens[i] = core->commands.Size();
 	}
 	return BRIDGE_OK;
 }
@@ -80,11 +83,13 @@ BridgeResult BRIDGE_CALL BridgeCore_GetCommandStream(
 	const void** out_ptr,
 	uint32_t* out_len)
 {
-	if (!core)
+	if (!core || !out_ptr || !out_len)
 	{
 		return BRIDGE_INVALID_ARGUMENT;
 	}
-	return bridge::GetCommandStream(*core, out_ptr, out_len);
+	*out_ptr = core->commands.Data();
+	*out_len = core->commands.Size();
+	return BRIDGE_OK;
 }
 
 BridgeResult BRIDGE_CALL BridgeCore_PushCallCore(

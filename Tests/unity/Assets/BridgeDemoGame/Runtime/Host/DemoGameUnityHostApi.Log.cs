@@ -4,9 +4,9 @@ using UnityEngine;
 
 namespace BridgeDemoGame
 {
-    public sealed partial class DemoGameUnityHostApi: IDemoLogHostApi
+    public sealed partial class DemoGameUnityHostApi
     {
-        public void Log(BridgeLogLevel level, BridgeStringView message)
+        public override void Log(BridgeLogLevel level, BridgeStringView message)
         {
             Commands++;
             Logs++;

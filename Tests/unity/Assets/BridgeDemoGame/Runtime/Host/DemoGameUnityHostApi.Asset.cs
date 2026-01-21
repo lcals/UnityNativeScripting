@@ -3,9 +3,9 @@ using DemoAsset.Bindings;
 
 namespace BridgeDemoGame
 {
-    public sealed partial class DemoGameUnityHostApi : IDemoAssetHostApi
+    public sealed partial class DemoGameUnityHostApi
     {
-        public void LoadAsset(ulong requestId, BridgeAssetType assetType, BridgeStringView assetKey)
+        public override void LoadAsset(ulong requestId, BridgeAssetType assetType, BridgeStringView assetKey)
         {
             Commands++;
             AssetRequests++;

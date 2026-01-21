@@ -469,10 +469,132 @@ static class Program
             sb.AppendLine("namespace Bridge.Bindings");
             sb.AppendLine("{");
             sb.AppendLine("    /// <summary>");
+            sb.AppendLine("    /// Host API 基类：用虚函数分发替代接口调用，降低 IL2CPP 下的 dispatch 开销。");
+            sb.AppendLine("    /// </summary>");
+            sb.AppendLine("    public abstract class BridgeAllHostApiBase");
+            bool wroteBaseList = false;
+            foreach (var m in modules)
+            {
+                if (m.Model.HostFns.Count == 0)
+                    continue;
+                sb.Append(wroteBaseList ? ", " : "        : ");
+                wroteBaseList = true;
+                sb.Append(m.CsNamespace);
+                sb.Append(".I");
+                sb.Append(m.Module);
+                sb.Append("HostApi");
+            }
+            if (wroteBaseList)
+                sb.AppendLine();
+            sb.AppendLine("    {");
+            foreach (var m in modules)
+            {
+                if (m.Model.HostFns.Count == 0)
+                    continue;
+
+                foreach (var fn in m.Model.HostFns)
+                {
+                    sb.Append("        public abstract void ");
+                    sb.Append(fn.Name);
+                    sb.Append('(');
+                    for (int i = 0; i < fn.Args.Count; i++)
+                    {
+                        if (i > 0) sb.Append(", ");
+                        var arg = fn.Args[i];
+                        sb.Append(MapCsHostArgParamType(arg.CppType));
+                        sb.Append(' ');
+                        sb.Append(ToCamel(arg.Name));
+                    }
+                    sb.AppendLine(");");
+                }
+            }
+            sb.AppendLine("    }");
+            sb.AppendLine();
+            sb.AppendLine("    /// <summary>");
             sb.AppendLine("    /// 单次扫描 command stream，并按 func_id 分发到各模块 Host API。");
             sb.AppendLine("    /// </summary>");
             sb.AppendLine("    public static class BridgeAllCommandDispatcher");
             sb.AppendLine("    {");
+            sb.AppendLine("        public static unsafe void DispatchFast(CommandStream stream, BridgeAllHostApiBase host)");
+            sb.AppendLine("        {");
+            sb.AppendLine("            if (stream.IsEmpty || host == null)");
+            sb.AppendLine("                return;");
+            sb.AppendLine();
+            sb.AppendLine("            byte* cursor = (byte*)stream.Ptr;");
+            sb.AppendLine("            byte* end = cursor + (int)stream.Length;");
+            sb.AppendLine();
+            sb.AppendLine("            while (cursor < end)");
+            sb.AppendLine("            {");
+            sb.AppendLine("                int remaining = (int)(end - cursor);");
+            sb.AppendLine("                if (remaining < (int)sizeof(BridgeCommandHeader))");
+            sb.AppendLine("                    break;");
+            sb.AppendLine();
+            sb.AppendLine("                var header = (BridgeCommandHeader*)cursor;");
+            sb.AppendLine("                int size = header->Size;");
+            sb.AppendLine("                if ((uint)size < (uint)sizeof(BridgeCommandHeader) || (uint)size > (uint)remaining)");
+            sb.AppendLine("                    break;");
+            sb.AppendLine();
+            sb.AppendLine("                if (header->Type == (ushort)BridgeCommandType.CallHost && size >= sizeof(BridgeCmdCallHost))");
+            sb.AppendLine("                {");
+            sb.AppendLine("                    var cmd = (BridgeCmdCallHost*)cursor;");
+            sb.AppendLine("                    uint payloadSize = cmd->PayloadSize;");
+            sb.AppendLine("                    if (payloadSize <= (uint)(size - sizeof(BridgeCmdCallHost)))");
+            sb.AppendLine("                    {");
+            sb.AppendLine("                        byte* payloadPtr = cursor + sizeof(BridgeCmdCallHost);");
+            sb.AppendLine();
+            sb.AppendLine("                        switch (cmd->FuncId)");
+            sb.AppendLine("                        {");
+
+            foreach (var m in modules)
+            {
+                if (m.Model.HostFns.Count == 0)
+                    continue;
+
+                foreach (var fn in m.Model.HostFns)
+                {
+                    uint id = ComputeHostFuncId(m.Module, fn.Name);
+                    sb.AppendLine($"                            case 0x{id:X8}u:");
+                    sb.AppendLine("                            {");
+                    sb.Append("                                if (payloadSize == (uint)sizeof(");
+                    sb.Append(m.CsNamespace);
+                    sb.Append(".HostArgs_");
+                    sb.Append(fn.Name);
+                    sb.AppendLine("))");
+                    sb.AppendLine("                                {");
+                    sb.Append("                                    ref readonly ");
+                    sb.Append(m.CsNamespace);
+                    sb.Append(".HostArgs_");
+                    sb.Append(fn.Name);
+                    sb.Append(" a = ref *((");
+                    sb.Append(m.CsNamespace);
+                    sb.Append(".HostArgs_");
+                    sb.Append(fn.Name);
+                    sb.AppendLine("*)payloadPtr);");
+                    sb.Append("                                    host.");
+                    sb.Append(fn.Name);
+                    sb.Append('(');
+                    for (int i = 0; i < fn.Args.Count; i++)
+                    {
+                        if (i > 0) sb.Append(", ");
+                        var arg = fn.Args[i];
+                        string field = $"a.{ToPascal(arg.Name)}";
+                        sb.Append(MapCsHostArgExpr(arg.CppType, field));
+                    }
+                    sb.AppendLine(");");
+                    sb.AppendLine("                                }");
+                    sb.AppendLine("                                break;");
+                    sb.AppendLine("                            }");
+                }
+            }
+
+            sb.AppendLine("                        }");
+            sb.AppendLine("                    }");
+            sb.AppendLine("                }");
+            sb.AppendLine();
+            sb.AppendLine("                cursor += size;");
+            sb.AppendLine("            }");
+            sb.AppendLine("        }");
+            sb.AppendLine();
             sb.AppendLine("        public static unsafe void Dispatch<THost>(CommandStream stream, THost host)");
             sb.Append("            where THost : class");
 

@@ -95,6 +95,7 @@ static class Program
         _ = assetProvider.TryGetHandle("Main/Prefabs/Bot", out _);
 
         var cores = new BridgeCore[bots];
+        var coreHandles = new IntPtr[bots];
 
         if (nullHost)
         {
@@ -103,6 +104,7 @@ static class Program
             {
                 var core = new BridgeCore(seed: (ulong)(i + 1), robotMode: true);
                 cores[i] = core;
+                coreHandles[i] = core.UnsafeHandle;
                 hosts[i] = new RobotNullHostApi(core, assetProvider);
             }
 
@@ -114,7 +116,7 @@ static class Program
             int warmupFrames = frames > 0 ? 1 : 0;
             for (int frame = 0; frame < warmupFrames; frame++)
             {
-                BridgeCore.TickManyAndGetCommandStreams(cores, dt, streams);
+                BridgeCore.TickManyAndGetCommandStreams(coreHandles, dt, streams);
                 for (int i = 0; i < cores.Length; i++)
                     BridgeAllCommandDispatcher.Dispatch(streams[i], hosts[i]);
             }
@@ -143,7 +145,7 @@ static class Program
             {
                 for (int frame = 0; frame < frames; frame++)
                 {
-                    BridgeCore.TickManyAndGetCommandStreams(cores, dt, streams);
+                    BridgeCore.TickManyAndGetCommandStreams(coreHandles, dt, streams);
                     for (int i = 0; i < cores.Length; i++)
                         BridgeAllCommandDispatcher.Dispatch(streams[i], hosts[i]);
                 }
@@ -197,6 +199,7 @@ static class Program
             {
                 var core = new BridgeCore(seed: (ulong)(i + 1), robotMode: true);
                 cores[i] = core;
+                coreHandles[i] = core.UnsafeHandle;
 
                 var world = new WorldState();
                 hosts[i] = new RobotHostApi(core, world, assetProvider);
@@ -210,7 +213,7 @@ static class Program
             int warmupFrames = frames > 0 ? 1 : 0;
             for (int frame = 0; frame < warmupFrames; frame++)
             {
-                BridgeCore.TickManyAndGetCommandStreams(cores, dt, streams);
+                BridgeCore.TickManyAndGetCommandStreams(coreHandles, dt, streams);
                 for (int i = 0; i < cores.Length; i++)
                     BridgeAllCommandDispatcher.Dispatch(streams[i], hosts[i]);
             }
@@ -239,7 +242,7 @@ static class Program
             {
                 for (int frame = 0; frame < frames; frame++)
                 {
-                    BridgeCore.TickManyAndGetCommandStreams(cores, dt, streams);
+                    BridgeCore.TickManyAndGetCommandStreams(coreHandles, dt, streams);
                     for (int i = 0; i < cores.Length; i++)
                         BridgeAllCommandDispatcher.Dispatch(streams[i], hosts[i]);
                 }
