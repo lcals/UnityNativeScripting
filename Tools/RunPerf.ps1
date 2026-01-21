@@ -15,6 +15,8 @@ param(
 
     [string]$UnityVersion = "",
     [string]$UnityExe = "",
+    [ValidateRange(1, 20)]
+    [int]$UnityIl2cppRepeat = 1,
     [switch]$NoUnity,
     [switch]$NoUnityEditMode,
     [switch]$NoUnityIl2cpp,
@@ -73,6 +75,25 @@ function Wait-FileUpdated(
 function Try-Get([scriptblock]$Thunk)
 {
     try { return & $Thunk } catch { return $null }
+}
+
+function Get-Median([double[]]$Values)
+{
+    if (-not $Values -or $Values.Count -eq 0)
+    {
+        return $null
+    }
+
+    $sorted = $Values | Sort-Object
+    $n = $sorted.Count
+    if (($n % 2) -eq 1)
+    {
+        return [double]$sorted[[int]($n / 2)]
+    }
+
+    $a = [double]$sorted[($n / 2) - 1]
+    $b = [double]$sorted[($n / 2)]
+    return ($a + $b) / 2.0
 }
 
 function Invoke-External(
@@ -831,27 +852,105 @@ if ($unity -and -not $NoUnityIl2cpp)
 
     if ($steps.unity_ruttt_build_il2cpp.ok)
     {
-        $steps.unity_ruttt_run_il2cpp = Invoke-External `
-            -Name "unity_ruttt_run_il2cpp" `
-            -FilePath $rutttExe `
-            -ArgumentList @("-batchmode", "-nographics", "-logFile", $rutttRunLog) `
-            -WorkDir $rutttDir `
-            -OutputFile (Join-Path $rutttDir "player_console.txt")
+        $repeat = [Math]::Max(1, $UnityIl2cppRepeat)
+        $runs = New-Object System.Collections.Generic.List[object]
 
-        if ($steps.unity_ruttt_run_il2cpp.ok)
+        for ($i = 1; $i -le $repeat; $i++)
         {
-            $runStartedUtc = Try-Get { [DateTime]::Parse($steps.unity_ruttt_run_il2cpp.startedUtc).ToUniversalTime() }
-            if ($runStartedUtc -and (Wait-FileUpdated -Path $rutttRunLog -NotBeforeUtc $runStartedUtc -TimeoutSeconds 1800 -MinLength 256))
+            $runLog = if ($i -eq 1) { $rutttRunLog } else { (Join-Path $rutttDir ("run_{0}.log" -f $i)) }
+            $playerConsole = if ($i -eq 1) { (Join-Path $rutttDir "player_console.txt") } else { (Join-Path $rutttDir ("player_console_{0}.txt" -f $i)) }
+            $stepName = if ($repeat -le 1) { "unity_ruttt_run_il2cpp" } else { ("unity_ruttt_run_il2cpp_{0}" -f $i) }
+
+            $step = Invoke-External `
+                -Name $stepName `
+                -FilePath $rutttExe `
+                -ArgumentList @("-batchmode", "-nographics", "-logFile", $runLog) `
+                -WorkDir $rutttDir `
+                -OutputFile $playerConsole
+
+            if ($i -eq 1)
             {
-                $results.unity_il2cpp_source = Parse-BridgePerfLog $rutttRunLog
+                $steps.unity_ruttt_run_il2cpp = $step
             }
-            else
+
+            if (-not $step.ok)
             {
-                $results.unity_il2cpp_source = [ordered]@{
-                    error  = "unity il2cpp run.log not produced in time"
-                    runLog = $rutttRunLog
+                continue
+            }
+
+            $runStartedUtc = Try-Get { [DateTime]::Parse($step.startedUtc).ToUniversalTime() }
+            if (-not $runStartedUtc)
+            {
+                continue
+            }
+
+            if (-not (Wait-FileUpdated -Path $runLog -NotBeforeUtc $runStartedUtc -TimeoutSeconds 1800 -MinLength 256))
+            {
+                continue
+            }
+
+            $parsed = Try-Get { Parse-BridgePerfLog $runLog }
+            if ($parsed)
+            {
+                $runs.Add($parsed) | Out-Null
+            }
+        }
+
+        if ($runs.Count -eq 0)
+        {
+            $results.unity_il2cpp_source = [ordered]@{
+                error  = "unity il2cpp run.log not produced in time"
+                runLog = $rutttRunLog
+            }
+        }
+        elseif ($runs.Count -eq 1)
+        {
+            $results.unity_il2cpp_source = $runs[0]
+        }
+        else
+        {
+            $flat = New-Object System.Collections.Generic.List[object]
+            foreach ($r in $runs)
+            {
+                foreach ($it in $r)
+                {
+                    if ($null -eq $it) { continue }
+
+                    $flat.Add([pscustomobject]@{
+                            mode        = [string]$it.mode
+                            ticks_per_s = [double]$it.ticks_per_s
+                            mib_per_s   = [double]$it.mib_per_s
+                            bots        = [int]$it.bots
+                            frames      = [int]$it.frames
+                            elapsed_ms  = [double]$it.elapsed_ms
+                            alloc_bytes = [long]$it.alloc_bytes
+                            total_bytes = [long]$it.total_bytes
+                        }) | Out-Null
                 }
             }
+
+            $median = New-Object System.Collections.Generic.List[object]
+            foreach ($g in ($flat | Group-Object bots))
+            {
+                $sample = $g.Group | Select-Object -First 1
+                $ticks = @($g.Group | ForEach-Object { [double]$_.ticks_per_s })
+                $mib = @($g.Group | ForEach-Object { [double]$_.mib_per_s })
+                $elapsed = @($g.Group | ForEach-Object { [double]$_.elapsed_ms })
+
+                $median.Add([ordered]@{
+                    mode        = $sample.mode
+                    ticks_per_s = (Get-Median $ticks)
+                    mib_per_s   = (Get-Median $mib)
+                    bots        = [int]$g.Name
+                    frames      = $sample.frames
+                    elapsed_ms  = (Get-Median $elapsed)
+                    alloc_bytes = $sample.alloc_bytes
+                    total_bytes = $sample.total_bytes
+                }) | Out-Null
+            }
+
+            $results.unity_il2cpp_source = $median | Sort-Object bots
+            $results.unity_il2cpp_source_repeat = $repeat
         }
     }
     else

@@ -7,6 +7,6 @@
   ],
   "optionalUnityReferences": [
     "TestAssemblies"
-  ]
+  ],
+  "allowUnsafeCode": true
 }
-

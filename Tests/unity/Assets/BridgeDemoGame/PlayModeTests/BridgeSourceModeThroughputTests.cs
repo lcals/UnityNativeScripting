@@ -157,15 +157,22 @@ namespace BridgeDemoGame.PlayModeTests
             out ulong totalBytes)
         {
             totalBytes = 0;
+            int count = coreHandles.Length;
 
-            for (int frame = 0; frame < frames; frame++)
+            unsafe
             {
-                BridgeCore.TickManyAndGetCommandStreams(coreHandles, dt, streams);
-                for (int i = 0; i < coreHandles.Length; i++)
+                fixed (CommandStream* streamsPtr = streams)
                 {
-                    CommandStream stream = streams[i];
-                    totalBytes += stream.Length;
-                    BridgeAllCommandDispatcher.DispatchFast(stream, hosts[i]);
+                    for (int frame = 0; frame < frames; frame++)
+                    {
+                        BridgeCore.TickManyAndGetCommandStreams(coreHandles, dt, streams);
+                        for (int i = 0; i < count; i++)
+                        {
+                            CommandStream stream = streamsPtr[i];
+                            totalBytes += stream.Length;
+                            BridgeAllCommandDispatcher.DispatchFast(stream, hosts[i]);
+                        }
+                    }
                 }
             }
         }
