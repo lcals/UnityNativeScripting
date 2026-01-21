@@ -8,6 +8,8 @@ param(
 
     [switch]$NoReadme,
     [string]$ReadmeFile = "",
+    [int]$ReadmeMaxRows = 20,
+    [switch]$UpdateReadmeOnly,
 
     [string]$UnityVersion = "",
     [string]$UnityExe = "",
@@ -390,7 +392,8 @@ function Parse-BridgePerfLog([string]$LogPath)
 
 function Update-PerfReadme(
     [string]$ReadmePath,
-    $Record
+    [string]$HistoryPath,
+    [int]$MaxRows
 )
 {
     if ([string]::IsNullOrWhiteSpace($ReadmePath))
@@ -426,57 +429,101 @@ function Update-PerfReadme(
         $text = $text.TrimEnd() + ($nl + $nl) + $section
     }
 
-    $runId = Try-Get { [string]$Record.runId }
-    if ([string]::IsNullOrWhiteSpace($runId))
+    $tableHeader = "| tsUtc | runId | tag | git | robothost_null cmd/s | robot_runner cmd/s | il2cpp_source 1k ticks/s | il2cpp_source 10k ticks/s |"
+    $tableSep = "|---|---|---|---|---:|---:|---:|---:|"
+
+    $rows = New-Object System.Collections.Generic.List[string]
+
+    if (Test-Path $HistoryPath)
     {
-        return
-    }
+        $tailCount = [Math]::Max(1, [Math]::Min(5000, $MaxRows * 50))
+        $lines = Get-Content $HistoryPath -Tail $tailCount
 
-    if ($text -match [regex]::Escape("| $runId |"))
-    {
-        return
-    }
-
-    $tsUtc = Try-Get { [string]$Record.tsUtc }
-    if ([string]::IsNullOrWhiteSpace($tsUtc)) { $tsUtc = (Get-Date).ToUniversalTime().ToString("o") }
-
-    $tag = Try-Get { [string]$Record.tag }
-    $commit = Try-Get { [string]$Record.git.commit }
-    if (-not [string]::IsNullOrWhiteSpace($commit) -and $commit.Length -gt 7) { $commit = $commit.Substring(0, 7) }
-    $dirty = Try-Get { [bool]$Record.git.dirty }
-    if ($dirty) { $commit = "$commit*" }
-
-    $rhNull = Try-Get { [double]$Record.results.robothost_null.commands_per_s }
-    $rr = Try-Get { [double]$Record.results.robot_runner.commands_per_s }
-
-    $il2 = Try-Get { $Record.results.unity_il2cpp_source }
-    $il2_1k = $null
-    $il2_10k = $null
-    try
-    {
-        if ($il2 -is [System.Array])
+        $seen = New-Object System.Collections.Generic.HashSet[string]
+        for ($i = $lines.Count - 1; $i -ge 0; $i--)
         {
-            $il2_1k = ($il2 | Where-Object bots -eq 1000 | Select-Object -First 1).ticks_per_s
-            $il2_10k = ($il2 | Where-Object bots -eq 10000 | Select-Object -First 1).ticks_per_s
+            if ($rows.Count -ge $MaxRows) { break }
+
+            $line = $lines[$i]
+            if ([string]::IsNullOrWhiteSpace($line)) { continue }
+
+            $rec = $null
+            try { $rec = $line | ConvertFrom-Json } catch { continue }
+            if (-not $rec) { continue }
+
+            $runId = Try-Get { [string]$rec.runId }
+            if ([string]::IsNullOrWhiteSpace($runId)) { continue }
+            if (-not $seen.Add($runId)) { continue }
+
+            $tsUtcObj = Try-Get { $rec.tsUtc }
+            $tsUtc = $null
+            if ($tsUtcObj -is [DateTime])
+            {
+                $tsUtc = $tsUtcObj.ToUniversalTime().ToString("o")
+            }
+            else
+            {
+                $tsUtc = Try-Get { [string]$tsUtcObj }
+            }
+            if ([string]::IsNullOrWhiteSpace($tsUtc)) { $tsUtc = "n/a" }
+
+            $tag = Try-Get { [string]$rec.tag }
+            if ([string]::IsNullOrWhiteSpace($tag)) { $tag = "" }
+
+            $commit = Try-Get { [string]$rec.git.commit }
+            if (-not [string]::IsNullOrWhiteSpace($commit) -and $commit.Length -gt 7) { $commit = $commit.Substring(0, 7) }
+            if ([string]::IsNullOrWhiteSpace($commit)) { $commit = "n/a" }
+            $dirty = Try-Get { [bool]$rec.git.dirty }
+            if ($dirty) { $commit = "$commit*" }
+
+            $rhNull = Try-Get { [double]$rec.results.robothost_null.commands_per_s }
+            $rr = Try-Get { [double]$rec.results.robot_runner.commands_per_s }
+
+            $il2 = Try-Get { $rec.results.unity_il2cpp_source }
+            $il2_1k = $null
+            $il2_10k = $null
+            try
+            {
+                if ($il2 -is [System.Array])
+                {
+                    $il2_1k = ($il2 | Where-Object bots -eq 1000 | Select-Object -First 1).ticks_per_s
+                    $il2_10k = ($il2 | Where-Object bots -eq 10000 | Select-Object -First 1).ticks_per_s
+                }
+            }
+            catch
+            {
+            }
+
+            $fmt0 = { param($v) if ($null -eq $v) { "n/a" } else { "{0:0}" -f $v } }
+            $fmt2 = { param($v) if ($null -eq $v) { "n/a" } else { "{0:0.00}" -f $v } }
+
+            $rows.Add(@(
+                    "| $tsUtc | $runId | $tag | $commit |",
+                    " $(& $fmt0 $rhNull) |",
+                    " $(& $fmt0 $rr) |",
+                    " $(& $fmt2 $il2_1k) |",
+                    " $(& $fmt2 $il2_10k) |"
+                ) -join "")
         }
     }
-    catch
+
+    $blockLines = New-Object System.Collections.Generic.List[string]
+    $blockLines.Add($start)
+    $blockLines.Add($tableHeader)
+    $blockLines.Add($tableSep)
+    foreach ($r in $rows) { $blockLines.Add($r) }
+    $blockLines.Add($end)
+
+    $block = ($blockLines -join $nl)
+    $pattern = "(?s)" + [regex]::Escape($start) + ".*?" + [regex]::Escape($end)
+    if ([regex]::IsMatch($text, $pattern))
     {
+        $text = [regex]::Replace($text, $pattern, [System.Text.RegularExpressions.MatchEvaluator]{ param($m) $block }, 1)
     }
-
-    $fmt0 = { param($v) if ($null -eq $v) { "n/a" } else { "{0:0}" -f $v } }
-    $fmt2 = { param($v) if ($null -eq $v) { "n/a" } else { "{0:0.00}" -f $v } }
-
-    $row = @(
-        "| $tsUtc | $runId | $tag | $commit |",
-        " $(& $fmt0 $rhNull) |",
-        " $(& $fmt0 $rr) |",
-        " $(& $fmt2 $il2_1k) |",
-        " $(& $fmt2 $il2_10k) |"
-    ) -join ""
-
-    $replacement = $row + $nl + $end
-    $text = [regex]::Replace($text, [regex]::Escape($end), [System.Text.RegularExpressions.MatchEvaluator]{ param($m) $replacement }, 1)
+    else
+    {
+        $text = $text.TrimEnd() + ($nl + $nl) + $block + $nl
+    }
 
     Set-Content -Path $ReadmePath -Value $text -Encoding UTF8
 }
@@ -499,6 +546,20 @@ if (-not $NoReadme)
     {
         $readmePath = (Resolve-Path $ReadmeFile).Path
     }
+}
+
+if ($UpdateReadmeOnly)
+{
+    if ($readmePath)
+    {
+        Update-PerfReadme -ReadmePath $readmePath -HistoryPath $OutFile -MaxRows $ReadmeMaxRows
+        Write-Host "Updated: $readmePath"
+    }
+    else
+    {
+        Write-Host "README update disabled (-NoReadme)"
+    }
+    exit 0
 }
 
 $runId = (Get-Date -Format "yyyyMMdd_HHmmss")
@@ -767,7 +828,7 @@ if ($readmePath)
 {
     try
     {
-        Update-PerfReadme -ReadmePath $readmePath -Record $record
+        Update-PerfReadme -ReadmePath $readmePath -HistoryPath $OutFile -MaxRows $ReadmeMaxRows
         Write-Host "Updated: $readmePath"
     }
     catch
