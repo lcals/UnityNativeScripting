@@ -45,7 +45,7 @@ namespace Bridge.Bindings
                             {
                                 if (payloadSize == (uint)sizeof(DemoAsset.Bindings.HostArgs_LoadAsset))
                                 {
-                                    var a = *((DemoAsset.Bindings.HostArgs_LoadAsset*)payloadPtr);
+                                    ref readonly DemoAsset.Bindings.HostArgs_LoadAsset a = ref *((DemoAsset.Bindings.HostArgs_LoadAsset*)payloadPtr);
                                     host.LoadAsset(a.RequestId, a.AssetType, a.AssetKey);
                                 }
                                 break;
@@ -54,8 +54,8 @@ namespace Bridge.Bindings
                             {
                                 if (payloadSize == (uint)sizeof(DemoEntity.Bindings.HostArgs_SpawnEntity))
                                 {
-                                    var a = *((DemoEntity.Bindings.HostArgs_SpawnEntity*)payloadPtr);
-                                    host.SpawnEntity(a.EntityId, a.PrefabHandle, a.Transform, a.Flags);
+                                    ref readonly DemoEntity.Bindings.HostArgs_SpawnEntity a = ref *((DemoEntity.Bindings.HostArgs_SpawnEntity*)payloadPtr);
+                                    host.SpawnEntity(a.EntityId, a.PrefabHandle, in a.Transform, a.Flags);
                                 }
                                 break;
                             }
@@ -63,8 +63,8 @@ namespace Bridge.Bindings
                             {
                                 if (payloadSize == (uint)sizeof(DemoEntity.Bindings.HostArgs_SetTransform))
                                 {
-                                    var a = *((DemoEntity.Bindings.HostArgs_SetTransform*)payloadPtr);
-                                    host.SetTransform(a.EntityId, a.Mask, a.Transform);
+                                    ref readonly DemoEntity.Bindings.HostArgs_SetTransform a = ref *((DemoEntity.Bindings.HostArgs_SetTransform*)payloadPtr);
+                                    host.SetTransform(a.EntityId, a.Mask, in a.Transform);
                                 }
                                 break;
                             }
@@ -72,7 +72,7 @@ namespace Bridge.Bindings
                             {
                                 if (payloadSize == (uint)sizeof(DemoEntity.Bindings.HostArgs_DestroyEntity))
                                 {
-                                    var a = *((DemoEntity.Bindings.HostArgs_DestroyEntity*)payloadPtr);
+                                    ref readonly DemoEntity.Bindings.HostArgs_DestroyEntity a = ref *((DemoEntity.Bindings.HostArgs_DestroyEntity*)payloadPtr);
                                     host.DestroyEntity(a.EntityId);
                                 }
                                 break;
@@ -81,7 +81,7 @@ namespace Bridge.Bindings
                             {
                                 if (payloadSize == (uint)sizeof(DemoLog.Bindings.HostArgs_Log))
                                 {
-                                    var a = *((DemoLog.Bindings.HostArgs_Log*)payloadPtr);
+                                    ref readonly DemoLog.Bindings.HostArgs_Log a = ref *((DemoLog.Bindings.HostArgs_Log*)payloadPtr);
                                     host.Log(a.Level, a.Message);
                                 }
                                 break;

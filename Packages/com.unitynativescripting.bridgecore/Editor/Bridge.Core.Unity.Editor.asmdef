@@ -1,0 +1,12 @@
+{
+  "name": "Bridge.Core.Unity.Editor",
+  "references": [
+    "Bridge.Core.Unity",
+    "UnityEditor.TestRunner",
+    "UnityEngine.TestRunner",
+    "Unity.PerformanceTesting"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ]
+}

@@ -1,5 +1,12 @@
 {
   "dependencies": {
+    "com.cysharp.runtimeunittesttoolkit": {
+      "version": "https://github.com/Cysharp/RuntimeUnitTestToolkit.git?path=RuntimeUnitTestToolkit/Assets/RuntimeUnitTestToolkit#2.6.1",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "eec2dd0bbf7a627cad80a529ba328585178e5747"
+    },
     "com.unity.2d.sprite": {
       "version": "1.0.0",
       "depth": 0,
@@ -176,6 +183,12 @@
         "com.unity.modules.xr": "1.0.0"
       },
       "url": "https://packages.unity.com"
+    },
+    "com.unitynativescripting.bridgecore": {
+      "version": "file:../../../Packages/com.unitynativescripting.bridgecore",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {}
     },
     "com.unity.modules.accessibility": {
       "version": "1.0.0",

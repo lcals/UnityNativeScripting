@@ -1,0 +1,7 @@
+{
+  "name": "BridgeDemoGame.Runtime",
+  "references": [
+    "Bridge.Core",
+    "BridgeDemoGame.Generated"
+  ]
+}

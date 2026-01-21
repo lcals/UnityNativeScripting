@@ -1,0 +1,10 @@
+{
+  "name": "com.unitynativescripting.bridgecore",
+  "version": "0.1.0",
+  "displayName": "Bridge Core (UnityNativeScripting)",
+  "description": "Core-first native runtime bridge (command stream polling, no native->managed callbacks).",
+  "unity": "6000.0",
+  "author": {
+    "name": "UnityNativeScripting"
+  }
+}

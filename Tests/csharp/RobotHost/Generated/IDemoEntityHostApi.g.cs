@@ -8,8 +8,8 @@ namespace DemoEntity.Bindings
 {
     public interface IDemoEntityHostApi
     {
-        void SpawnEntity(ulong entityId, ulong prefabHandle, BridgeTransform transform, uint flags);
-        void SetTransform(ulong entityId, uint mask, BridgeTransform transform);
+        void SpawnEntity(ulong entityId, ulong prefabHandle, in BridgeTransform transform, uint flags);
+        void SetTransform(ulong entityId, uint mask, in BridgeTransform transform);
         void DestroyEntity(ulong entityId);
     }
 }

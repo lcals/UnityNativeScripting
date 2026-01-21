@@ -63,4 +63,4 @@ Player 通常不需要“复制到临时目录”来绕开锁问题，因为运�
 - Editor：从“源 DLL”复制到 `Library/BridgeNative/<buildId>/` 并加载
 - Editor：可选的“同步 DLL 到 Assets/Plugins（仅用于出包）”工具
 
-对应实现位于 `Tests/unity/Assets/BridgeCore/`（不提交二进制 DLL）。
+对应实现位于 `Packages/com.unitynativescripting.bridgecore/`（不提交二进制 DLL）。

@@ -6,7 +6,7 @@ target_link_libraries(bridge_robot_runner PRIVATE bridge_core)
 target_compile_features(bridge_robot_runner PRIVATE cxx_std_20)
 
 target_include_directories(bridge_robot_runner PRIVATE
-  ${CMAKE_SOURCE_DIR}/Tests/cpp/demo_asset/generated
+  ${CMAKE_SOURCE_DIR}/Tests/cpp/generated
 )
 
 if (MSVC)

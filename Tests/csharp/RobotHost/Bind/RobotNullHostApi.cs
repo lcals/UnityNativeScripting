@@ -39,21 +39,19 @@ sealed class RobotNullHostApi : IRobotHostApi
         _core.AssetLoaded(requestId, handle, BridgeAssetStatus.Ok);
     }
 
-    public void SpawnEntity(ulong entityId, ulong prefabHandle, BridgeTransform transform, uint flags)
+    public void SpawnEntity(ulong entityId, ulong prefabHandle, in BridgeTransform transform, uint flags)
     {
         _ = entityId;
         _ = prefabHandle;
-        _ = transform;
         _ = flags;
         Commands++;
         Spawns++;
     }
 
-    public void SetTransform(ulong entityId, uint mask, BridgeTransform transform)
+    public void SetTransform(ulong entityId, uint mask, in BridgeTransform transform)
     {
         _ = entityId;
         _ = mask;
-        _ = transform;
         Commands++;
         Transforms++;
     }

@@ -108,8 +108,36 @@ static class Program
 
             var streams = new CommandStream[bots];
 
+            BridgeCore.PrepareTickManyCache(bots);
+
+            // Warmup：触发首次 P/Invoke/JIT，避免把一次性开销计入性能数据。
+            int warmupFrames = frames > 0 ? 1 : 0;
+            for (int frame = 0; frame < warmupFrames; frame++)
+            {
+                BridgeCore.TickManyAndGetCommandStreams(cores, dt, streams);
+                for (int i = 0; i < cores.Length; i++)
+                    BridgeAllCommandDispatcher.Dispatch(streams[i], hosts[i]);
+            }
+
+            ulong baseCommands = 0;
+            ulong baseAssetRequests = 0;
+            ulong baseLogs = 0;
+            ulong baseSpawns = 0;
+            ulong baseTransforms = 0;
+            ulong baseDestroys = 0;
+            for (int i = 0; i < hosts.Length; i++)
+            {
+                baseCommands += hosts[i].Commands;
+                baseAssetRequests += hosts[i].AssetRequests;
+                baseLogs += hosts[i].Logs;
+                baseSpawns += hosts[i].Spawns;
+                baseTransforms += hosts[i].Transforms;
+                baseDestroys += hosts[i].Destroys;
+            }
+
             long allocBefore = GC.GetAllocatedBytesForCurrentThread();
             var sw = Stopwatch.StartNew();
+            long allocAfter = allocBefore;
 
             try
             {
@@ -123,11 +151,10 @@ static class Program
             finally
             {
                 sw.Stop();
+                allocAfter = GC.GetAllocatedBytesForCurrentThread();
                 for (int i = 0; i < cores.Length; i++)
                     cores[i].Dispose();
             }
-
-            long allocAfter = GC.GetAllocatedBytesForCurrentThread();
 
             ulong totalCommands = 0;
             ulong totalAssetRequests = 0;
@@ -136,20 +163,27 @@ static class Program
             ulong totalTransforms = 0;
             ulong totalDestroys = 0;
 
-            for (int i = 0; i < hosts.Length; i++)
-            {
-                totalCommands += hosts[i].Commands;
-                totalAssetRequests += hosts[i].AssetRequests;
-                totalLogs += hosts[i].Logs;
+                for (int i = 0; i < hosts.Length; i++)
+                {
+                    totalCommands += hosts[i].Commands;
+                    totalAssetRequests += hosts[i].AssetRequests;
+                    totalLogs += hosts[i].Logs;
                 totalSpawns += hosts[i].Spawns;
                 totalTransforms += hosts[i].Transforms;
-                totalDestroys += hosts[i].Destroys;
-            }
+                    totalDestroys += hosts[i].Destroys;
+                }
 
-            return new RunResult(
-                elapsedSeconds: sw.Elapsed.TotalSeconds,
-                allocatedBytes: allocAfter - allocBefore,
-                totalCommands: totalCommands,
+                totalCommands -= baseCommands;
+                totalAssetRequests -= baseAssetRequests;
+                totalLogs -= baseLogs;
+                totalSpawns -= baseSpawns;
+                totalTransforms -= baseTransforms;
+                totalDestroys -= baseDestroys;
+
+                return new RunResult(
+                    elapsedSeconds: sw.Elapsed.TotalSeconds,
+                    allocatedBytes: allocAfter - allocBefore,
+                    totalCommands: totalCommands,
                 totalAssetRequests: totalAssetRequests,
                 totalLogs: totalLogs,
                 totalSpawns: totalSpawns,
@@ -170,8 +204,36 @@ static class Program
 
             var streams = new CommandStream[bots];
 
+            BridgeCore.PrepareTickManyCache(bots);
+
+            // Warmup：触发首次 P/Invoke/JIT，避免把一次性开销计入性能数据。
+            int warmupFrames = frames > 0 ? 1 : 0;
+            for (int frame = 0; frame < warmupFrames; frame++)
+            {
+                BridgeCore.TickManyAndGetCommandStreams(cores, dt, streams);
+                for (int i = 0; i < cores.Length; i++)
+                    BridgeAllCommandDispatcher.Dispatch(streams[i], hosts[i]);
+            }
+
+            ulong baseCommands = 0;
+            ulong baseAssetRequests = 0;
+            ulong baseLogs = 0;
+            ulong baseSpawns = 0;
+            ulong baseTransforms = 0;
+            ulong baseDestroys = 0;
+            for (int i = 0; i < hosts.Length; i++)
+            {
+                baseCommands += hosts[i].Commands;
+                baseAssetRequests += hosts[i].AssetRequests;
+                baseLogs += hosts[i].Logs;
+                baseSpawns += hosts[i].Spawns;
+                baseTransforms += hosts[i].Transforms;
+                baseDestroys += hosts[i].Destroys;
+            }
+
             long allocBefore = GC.GetAllocatedBytesForCurrentThread();
             var sw = Stopwatch.StartNew();
+            long allocAfter = allocBefore;
 
             try
             {
@@ -185,11 +247,10 @@ static class Program
             finally
             {
                 sw.Stop();
+                allocAfter = GC.GetAllocatedBytesForCurrentThread();
                 for (int i = 0; i < cores.Length; i++)
                     cores[i].Dispose();
             }
-
-            long allocAfter = GC.GetAllocatedBytesForCurrentThread();
 
             ulong totalCommands = 0;
             ulong totalAssetRequests = 0;
@@ -198,20 +259,27 @@ static class Program
             ulong totalTransforms = 0;
             ulong totalDestroys = 0;
 
-            for (int i = 0; i < hosts.Length; i++)
-            {
-                totalCommands += hosts[i].Commands;
-                totalAssetRequests += hosts[i].AssetRequests;
-                totalLogs += hosts[i].Logs;
+                for (int i = 0; i < hosts.Length; i++)
+                {
+                    totalCommands += hosts[i].Commands;
+                    totalAssetRequests += hosts[i].AssetRequests;
+                    totalLogs += hosts[i].Logs;
                 totalSpawns += hosts[i].Spawns;
                 totalTransforms += hosts[i].Transforms;
-                totalDestroys += hosts[i].Destroys;
-            }
+                    totalDestroys += hosts[i].Destroys;
+                }
 
-            return new RunResult(
-                elapsedSeconds: sw.Elapsed.TotalSeconds,
-                allocatedBytes: allocAfter - allocBefore,
-                totalCommands: totalCommands,
+                totalCommands -= baseCommands;
+                totalAssetRequests -= baseAssetRequests;
+                totalLogs -= baseLogs;
+                totalSpawns -= baseSpawns;
+                totalTransforms -= baseTransforms;
+                totalDestroys -= baseDestroys;
+
+                return new RunResult(
+                    elapsedSeconds: sw.Elapsed.TotalSeconds,
+                    allocatedBytes: allocAfter - allocBefore,
+                    totalCommands: totalCommands,
                 totalAssetRequests: totalAssetRequests,
                 totalLogs: totalLogs,
                 totalSpawns: totalSpawns,

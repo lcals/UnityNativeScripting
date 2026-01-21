@@ -21,7 +21,7 @@ static class Program
                 throw new InvalidOperationException($"未找到任何 .def 文件：{defsDir}。请创建 Tests/defs/*.def 或使用 --api 指定输入。");
         }
 
-        // outCpp 约定为 Tests 目录（默认：<repoRoot>/Tests），每个模块输出到 Tests/cpp/<cpp_ns>/generated
+        // outCpp 约定为 Tests 目录（默认：<repoRoot>/Tests），所有模块输出到 Tests/cpp/generated
         string outCpp = GetArg(args, "--out-cpp") ?? Path.Combine(repoRoot, "Tests");
         string outCs = GetArg(args, "--out-cs") ?? Path.Combine(repoRoot, "Tests", "csharp", "RobotHost", "Generated");
 
@@ -203,10 +203,9 @@ static class Program
 
     private static string ResolveOutCppDir(string repoRoot, string outCppArg, string module)
     {
-        // 默认 outCpp 为 Tests/cpp 根目录；每个模块输出到 Tests/cpp/<cpp_ns>/generated
+        // 默认 outCpp 为 Tests；所有模块输出到 Tests/cpp/generated（集中一个目录，便于 CMake include）
         string outCppRoot = Path.IsPathRooted(outCppArg) ? outCppArg : Path.Combine(repoRoot, outCppArg);
-        string cppNs = CppNamespaceFromModule(module);
-        return Path.Combine(outCppRoot, "cpp", cppNs, "generated");
+        return Path.Combine(outCppRoot, "cpp", "generated");
     }
 
     private sealed record ApiModel(List<ApiFn> HostFns, List<ApiFn> CoreFns)
@@ -533,7 +532,11 @@ static class Program
                     sb.Append(fn.Name);
                     sb.AppendLine("))");
                     sb.AppendLine("                                {");
-                    sb.Append("                                    var a = *((");
+                    sb.Append("                                    ref readonly ");
+                    sb.Append(m.CsNamespace);
+                    sb.Append(".HostArgs_");
+                    sb.Append(fn.Name);
+                    sb.Append(" a = ref *((");
                     sb.Append(m.CsNamespace);
                     sb.Append(".HostArgs_");
                     sb.Append(fn.Name);
@@ -620,7 +623,7 @@ static class Program
                 {
                     if (i > 0) sb.Append(", ");
                     var arg = fn.Args[i];
-                    sb.Append(MapCsHostArgType(arg.CppType));
+                    sb.Append(MapCsHostArgParamType(arg.CppType));
                     sb.Append(' ');
                     sb.Append(ToCamel(arg.Name));
                 }
@@ -647,7 +650,7 @@ static class Program
                 foreach (var arg in fn.Args)
                 {
                     sb.Append(", ");
-                    sb.Append(MapCsCoreCallArgType(arg.CppType));
+                    sb.Append(MapCsCoreCallArgParamType(arg.CppType));
                     sb.Append(' ');
                     sb.Append(ToCamel(arg.Name));
                 }
@@ -711,6 +714,17 @@ static class Program
             };
         }
 
+        private static string MapCsHostArgParamType(string cppType)
+        {
+            string type = MapCsHostArgType(cppType);
+            return cppType switch
+            {
+                // Hot path：避免 48B+ struct 的值拷贝（尤其是 SetTransform 高频）。
+                "BridgeTransform" => "in " + type,
+                _ => type,
+            };
+        }
+
         private static string MapCsCoreCallArgType(string cppType)
         {
             if (cppType == "BridgeStringView")
@@ -718,10 +732,21 @@ static class Program
             return MapCsHostArgType(cppType);
         }
 
+        private static string MapCsCoreCallArgParamType(string cppType)
+        {
+            string type = MapCsCoreCallArgType(cppType);
+            return cppType switch
+            {
+                "BridgeTransform" => "in " + type,
+                _ => type,
+            };
+        }
+
         private static string MapCsHostArgExpr(string cppType, string fieldExpr)
         {
             return cppType switch
             {
+                "BridgeTransform" => "in " + fieldExpr,
                 _ => fieldExpr
             };
         }

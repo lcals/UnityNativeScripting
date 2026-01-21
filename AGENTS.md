@@ -49,7 +49,7 @@ dotnet build Tests/csharp/RobotHost/RobotHost.csproj -c Release
 - C ABI 结构体变更必须同步更新：`Core/csharp/Bridge.Core/Interop/Structs.cs`。
 - 业务侧接口通过宏文件定义并生成：
   - 定义：`Tests/defs/*.def`（建议一个 `.def` 对应一个业务模块/子系统）
-  - 生成（C++）：`Tests/cpp/<module>/generated/<cpp_ns>_bindings.generated.h`
+  - 生成（C++）：`Tests/cpp/generated/<cpp_ns>_bindings.generated.h`
   - 生成（C# Host）：`Tests/csharp/RobotHost/Generated/<Module>.*.g.cs`
   - 生成（Unity Host）：`Tests/unity/Assets/BridgeDemoGame/Generated/<Module>.*.g.cs`
 - 跨边界只传：blittable struct、ID/handle（`uint64`）、UTF-8 字符串视图（`ptr+len`，仅在当帧有效）。

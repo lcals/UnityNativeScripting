@@ -11,9 +11,7 @@ target_link_libraries(bridge_demo_game PUBLIC bridge_runtime)
 target_compile_features(bridge_demo_game PUBLIC cxx_std_20)
 
 target_include_directories(bridge_demo_game PRIVATE
-  ${CMAKE_SOURCE_DIR}/Tests/cpp/demo_asset/generated
-  ${CMAKE_SOURCE_DIR}/Tests/cpp/demo_entity/generated
-  ${CMAKE_SOURCE_DIR}/Tests/cpp/demo_log/generated
+  ${CMAKE_SOURCE_DIR}/Tests/cpp/generated
 )
 
 if (MSVC)

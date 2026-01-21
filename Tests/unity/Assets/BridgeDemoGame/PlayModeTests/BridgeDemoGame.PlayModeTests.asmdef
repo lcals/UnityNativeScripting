@@ -1,0 +1,12 @@
+{
+  "name": "BridgeDemoGame.PlayModeTests",
+  "references": [
+    "Bridge.Core",
+    "Bridge.Core.Unity",
+    "BridgeDemoGame.Generated"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}
+

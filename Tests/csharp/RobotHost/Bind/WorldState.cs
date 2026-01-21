@@ -11,13 +11,13 @@ sealed class WorldState
         _ = message;
     }
 
-    public void OnSpawn(ulong entityId, ulong prefabHandle, BridgeTransform transform, uint flags)
+    public void OnSpawn(ulong entityId, ulong prefabHandle, in BridgeTransform transform, uint flags)
     {
         _ = flags;
         _entities[entityId] = new Entity(prefabHandle, transform);
     }
 
-    public void OnSetTransform(ulong entityId, uint mask, BridgeTransform transform)
+    public void OnSetTransform(ulong entityId, uint mask, in BridgeTransform transform)
     {
         if (_entities.TryGetValue(entityId, out var entity))
         {

@@ -82,7 +82,7 @@ Core 只关心 `assetKey` 与 `handle`，不关心 AB 细节。
 业务接口（func_id 与 payload 结构）通过宏文件定义并由生成器产出：
 
 - 定义：`Tests/defs/*.def`（建议一个 `.def` 对应一个模块/子系统）
-- 生成（C++）：`Tests/cpp/<module>/generated/<cpp_ns>_bindings.generated.h`
+- 生成（C++）：`Tests/cpp/generated/<cpp_ns>_bindings.generated.h`
 - 生成（C# Host）：`Tests/csharp/RobotHost/Generated/<Module>.*.g.cs`
 - 生成（Unity Host）：`Tests/unity/Assets/BridgeDemoGame/Generated/<Module>.*.g.cs`
 

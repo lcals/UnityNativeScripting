@@ -29,7 +29,7 @@ namespace BridgeDemoGame.Tests
                 _core.AssetLoaded(requestId, handle: 1, BridgeAssetStatus.Ok);
             }
 
-            public void SpawnEntity(ulong entityId, ulong prefabHandle, BridgeTransform transform, uint flags)
+            public void SpawnEntity(ulong entityId, ulong prefabHandle, in BridgeTransform transform, uint flags)
             {
                 _ = entityId;
                 _ = prefabHandle;
@@ -37,7 +37,7 @@ namespace BridgeDemoGame.Tests
                 _ = flags;
             }
 
-            public void SetTransform(ulong entityId, uint mask, BridgeTransform transform)
+            public void SetTransform(ulong entityId, uint mask, in BridgeTransform transform)
             {
                 _ = entityId;
                 _ = mask;
