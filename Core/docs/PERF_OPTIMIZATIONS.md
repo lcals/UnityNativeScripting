@@ -116,6 +116,31 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File Tools/RunPerf.ps1 -UnityVersion 60
   - 10k ticks/s：约 `31.06M` → `33.67M`
 - `total_bytes` 约减半（10k*300：`240,000,000` → `120,000,000`），解析与拷贝成本显著下降。
 
+### 5) `DispatchFast` 改为泛型（避免 Host 参数上溯）
+
+**引入**
+- git：`c484055`
+- 验证：Unity `6000.0.40f1`
+  - tag=`post_c484055_dispatchfast_generic`；runId=`20260121_205232`（repeat=3）
+  - tag=`post_c484055_dispatchfast_generic_rerun`；runId=`20260121_205751`（repeat=3）
+- 对比：tag=`post_d5fa6a1_setposition`；runId=`20260121_202154`（repeat=5）
+
+**现象（IL2CPP 输出）**
+- 调用点如果把 Host 上溯到 `BridgeAllHostApiBase`，IL2CPP 的热路径更容易固定走虚调用分发（`VirtualActionInvoker`）。
+
+**改动**
+- 把生成的 `DispatchFast` 改成泛型：`DispatchFast<THost>(CommandStream, THost host) where THost : BridgeAllHostApiBase`。
+- 保留旧签名重载 `DispatchFast(CommandStream, BridgeAllHostApiBase)`，内部 forward 到泛型版本（兼容既有调用点）。
+
+**位置**
+- 生成器：`Core/Tools/BridgeGen/Program.cs`
+- 生成物：
+  - `Tests/csharp/RobotHost/Generated/Bridge.AllCommandDispatcher.g.cs`
+  - `Tests/unity/Assets/BridgeDemoGame/Generated/Bridge.AllCommandDispatcher.g.cs`
+
+**效果**
+- Unity IL2CPP Source 的 `ticks/s`（1k/10k）在本机有稳定提升（见 `README.md` 性能摘要表与对应 runId）。
+
 ## 优化流程建议（只在提升时记录/提交）
 
 1. 做一次“小步”改动（只动一个热点点位）。
