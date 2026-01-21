@@ -41,6 +41,18 @@ namespace BridgeDemoGame
                 ApplyTransform(go.transform, transform, mask);
         }
 
+        public override void SetPosition(ulong entityId, BridgeVec3 position)
+        {
+            Commands++;
+            Transforms++;
+
+            if (!_enableRendering)
+                return;
+
+            if (_entities.TryGetValue(entityId, out GameObject go) && go != null)
+                go.transform.position = new Vector3(position.X, position.Y, position.Z);
+        }
+
         public override void DestroyEntity(ulong entityId)
         {
             Commands++;

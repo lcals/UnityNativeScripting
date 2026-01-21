@@ -815,6 +815,8 @@ static class Program
                 "BridgeLogLevel" => "BridgeLogLevel",
                 "BridgeAssetType" => "BridgeAssetType",
                 "BridgeAssetStatus" => "BridgeAssetStatus",
+                "BridgeVec3" => "BridgeVec3",
+                "BridgeQuat" => "BridgeQuat",
                 "BridgeTransform" => "BridgeTransform",
                 "BridgeStringView" => "BridgeStringView",
                 _ => throw new InvalidOperationException($"未支持的 C++ 类型：{cppType}")

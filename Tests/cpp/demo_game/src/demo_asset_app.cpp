@@ -38,9 +38,9 @@ namespace bridge
 				if (entity_spawned_)
 				{
 					t_ += dt;
-					BridgeTransform tr = CoreContext::IdentityTransform();
-					tr.position.x = t_;
-					demo_entity::SetTransform(ctx, entity_id_, /*mask*/ 1u, tr);
+					BridgeVec3 pos{};
+					pos.x = t_;
+					demo_entity::SetPosition(ctx, entity_id_, pos);
 				}
 			}
 

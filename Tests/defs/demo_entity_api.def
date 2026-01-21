@@ -2,5 +2,5 @@
 
 BRIDGE_HOST_API(SpawnEntity, uint64_t entityId, uint64_t prefabHandle, BridgeTransform transform, uint32_t flags)
 BRIDGE_HOST_API(SetTransform, uint64_t entityId, uint32_t mask, BridgeTransform transform)
+BRIDGE_HOST_API(SetPosition, uint64_t entityId, BridgeVec3 position)
 BRIDGE_HOST_API(DestroyEntity, uint64_t entityId)
-

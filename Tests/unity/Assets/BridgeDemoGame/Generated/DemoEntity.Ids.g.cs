@@ -8,6 +8,7 @@ namespace DemoEntity.Bindings
     {
         SpawnEntity = 0xBCAA331Du,
         SetTransform = 0x20DA0B6Fu,
+        SetPosition = 0x5B16AE9Eu,
         DestroyEntity = 0xC7C1C59Cu,
     }
 

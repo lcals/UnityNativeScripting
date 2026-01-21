@@ -10,6 +10,7 @@ namespace DemoEntity.Bindings
     {
         void SpawnEntity(ulong entityId, ulong prefabHandle, in BridgeTransform transform, uint flags);
         void SetTransform(ulong entityId, uint mask, in BridgeTransform transform);
+        void SetPosition(ulong entityId, BridgeVec3 position);
         void DestroyEntity(ulong entityId);
     }
 }

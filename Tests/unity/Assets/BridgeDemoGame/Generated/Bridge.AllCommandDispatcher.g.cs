@@ -15,6 +15,7 @@ namespace Bridge.Bindings
         public abstract void LoadAsset(ulong requestId, BridgeAssetType assetType, BridgeStringView assetKey);
         public abstract void SpawnEntity(ulong entityId, ulong prefabHandle, in BridgeTransform transform, uint flags);
         public abstract void SetTransform(ulong entityId, uint mask, in BridgeTransform transform);
+        public abstract void SetPosition(ulong entityId, BridgeVec3 position);
         public abstract void DestroyEntity(ulong entityId);
         public abstract void Log(BridgeLogLevel level, BridgeStringView message);
     }
@@ -77,6 +78,15 @@ namespace Bridge.Bindings
                                 {
                                     ref readonly DemoEntity.Bindings.HostArgs_SetTransform a = ref *((DemoEntity.Bindings.HostArgs_SetTransform*)payloadPtr);
                                     host.SetTransform(a.EntityId, a.Mask, in a.Transform);
+                                }
+                                break;
+                            }
+                            case 0x5B16AE9Eu:
+                            {
+                                if (payloadSize == (uint)sizeof(DemoEntity.Bindings.HostArgs_SetPosition))
+                                {
+                                    ref readonly DemoEntity.Bindings.HostArgs_SetPosition a = ref *((DemoEntity.Bindings.HostArgs_SetPosition*)payloadPtr);
+                                    host.SetPosition(a.EntityId, a.Position);
                                 }
                                 break;
                             }
@@ -160,6 +170,15 @@ namespace Bridge.Bindings
                                 {
                                     ref readonly DemoEntity.Bindings.HostArgs_SetTransform a = ref *((DemoEntity.Bindings.HostArgs_SetTransform*)payloadPtr);
                                     host.SetTransform(a.EntityId, a.Mask, in a.Transform);
+                                }
+                                break;
+                            }
+                            case 0x5B16AE9Eu:
+                            {
+                                if (payloadSize == (uint)sizeof(DemoEntity.Bindings.HostArgs_SetPosition))
+                                {
+                                    ref readonly DemoEntity.Bindings.HostArgs_SetPosition a = ref *((DemoEntity.Bindings.HostArgs_SetPosition*)payloadPtr);
+                                    host.SetPosition(a.EntityId, a.Position);
                                 }
                                 break;
                             }

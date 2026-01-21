@@ -13,6 +13,7 @@ namespace demo_entity
 	{
 		SpawnEntity = 0xBCAA331Du,
 		SetTransform = 0x20DA0B6Fu,
+		SetPosition = 0x5B16AE9Eu,
 		DestroyEntity = 0xC7C1C59Cu,
 	};
 
@@ -33,6 +34,12 @@ namespace demo_entity
 		uint64_t entityId;
 		uint32_t mask;
 		BridgeTransform transform;
+	};
+
+	struct HostArgs_SetPosition
+	{
+		uint64_t entityId;
+		BridgeVec3 position;
 	};
 
 	struct HostArgs_DestroyEntity
@@ -58,6 +65,14 @@ namespace demo_entity
 		a.mask = mask;
 		a.transform = transform;
 		ctx.CallHost(static_cast<uint32_t>(HostFuncId::SetTransform), &a, static_cast<uint32_t>(sizeof(a)));
+	}
+
+	inline void SetPosition(bridge::CoreContext& ctx, uint64_t entityId, BridgeVec3 position)
+	{
+		HostArgs_SetPosition a{};
+		a.entityId = entityId;
+		a.position = position;
+		ctx.CallHost(static_cast<uint32_t>(HostFuncId::SetPosition), &a, static_cast<uint32_t>(sizeof(a)));
 	}
 
 	inline void DestroyEntity(bridge::CoreContext& ctx, uint64_t entityId)

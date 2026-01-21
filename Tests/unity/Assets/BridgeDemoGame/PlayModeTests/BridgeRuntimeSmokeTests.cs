@@ -43,6 +43,12 @@ namespace BridgeDemoGame.PlayModeTests
                 _ = transform;
             }
 
+            public override void SetPosition(ulong entityId, BridgeVec3 position)
+            {
+                _ = entityId;
+                _ = position;
+            }
+
             public override void DestroyEntity(ulong entityId)
             {
                 _ = entityId;

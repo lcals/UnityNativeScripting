@@ -44,6 +44,12 @@ namespace BridgeDemoGame.Tests
                 _ = transform;
             }
 
+            public void SetPosition(ulong entityId, BridgeVec3 position)
+            {
+                _ = entityId;
+                _ = position;
+            }
+
             public void DestroyEntity(ulong entityId)
             {
                 _ = entityId;

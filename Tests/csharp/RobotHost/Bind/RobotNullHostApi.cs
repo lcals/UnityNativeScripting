@@ -57,6 +57,14 @@ sealed class RobotNullHostApi : BridgeAllHostApiBase, IRobotHostApi
         Transforms++;
     }
 
+    public override void SetPosition(ulong entityId, BridgeVec3 position)
+    {
+        _ = entityId;
+        _ = position;
+        Commands++;
+        Transforms++;
+    }
+
     public override void DestroyEntity(ulong entityId)
     {
         _ = entityId;

@@ -64,6 +64,28 @@ sealed class WorldState
         entity.Transform = tr2;
     }
 
+    public void OnSetPosition(ulong entityId, BridgeVec3 position)
+    {
+        if (_entities == null)
+        {
+            if (!_hasSingleEntity || entityId != _singleEntityId)
+                return;
+
+            var tr = _singleEntity.Transform;
+            tr.Position = position;
+            _singleEntity.Transform = tr;
+            return;
+        }
+
+        ref Entity entity = ref CollectionsMarshal.GetValueRefOrNullRef(_entities, entityId);
+        if (Unsafe.IsNullRef(ref entity))
+            return;
+
+        var tr2 = entity.Transform;
+        tr2.Position = position;
+        entity.Transform = tr2;
+    }
+
     public void OnDestroy(ulong entityId)
     {
         if (_entities == null)

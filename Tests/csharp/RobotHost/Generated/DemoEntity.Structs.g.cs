@@ -25,6 +25,13 @@ namespace DemoEntity.Bindings
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public struct HostArgs_SetPosition
+    {
+        public ulong EntityId;
+        public BridgeVec3 Position;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public struct HostArgs_DestroyEntity
     {
         public ulong EntityId;
