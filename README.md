@@ -73,3 +73,13 @@ powershell -ExecutionPolicy Bypass -File Tools/RunPerf.ps1 -Bots 1000 -Frames 30
 - 单次 run 的日志/产物：`build/perf_runs/<runId>/`
 - 可选：`-NoUnity` / `-NoUnityEditMode` / `-NoUnityIl2cpp` / `-NoBuild`
 - 可选：`-UnityVersion 6000.0.40f1` 或 `-UnityExe <path>` 用于指定 Unity 版本/路径
+
+### 性能摘要（自动追加）
+
+下表由 `Tools/RunPerf.ps1` 自动追加（更完整的数据仍以 `build/perf_history.jsonl` 为准）。
+
+<!-- PERF_TABLE_START -->
+| tsUtc | runId | tag | git | robothost_null cmd/s | robot_runner cmd/s | il2cpp_source 1k ticks/s | il2cpp_source 10k ticks/s |
+|---|---|---|---|---:|---:|---:|---:|
+<!-- PERF_TABLE_END -->
+

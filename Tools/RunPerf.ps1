@@ -6,6 +6,9 @@ param(
     [string]$OutFile = "",
     [string]$Tag = "",
 
+    [switch]$NoReadme,
+    [string]$ReadmeFile = "",
+
     [string]$UnityVersion = "",
     [string]$UnityExe = "",
     [switch]$NoUnity,
@@ -385,11 +388,117 @@ function Parse-BridgePerfLog([string]$LogPath)
     return ($items.Values | Sort-Object bots)
 }
 
+function Update-PerfReadme(
+    [string]$ReadmePath,
+    $Record
+)
+{
+    if ([string]::IsNullOrWhiteSpace($ReadmePath))
+    {
+        return
+    }
+
+    if (-not (Test-Path $ReadmePath))
+    {
+        return
+    }
+
+    $text = Get-Content $ReadmePath -Raw
+    $nl = if ($text.Contains("`r`n")) { "`r`n" } else { "`n" }
+
+    $start = "<!-- PERF_TABLE_START -->"
+    $end = "<!-- PERF_TABLE_END -->"
+
+    if (-not $text.Contains($start) -or -not $text.Contains($end))
+    {
+        $section = @(
+            "### 性能摘要（自动追加）",
+            "",
+            "下表由 `Tools/RunPerf.ps1` 自动追加（更完整的数据仍以 `build/perf_history.jsonl` 为准）。",
+            "",
+            $start,
+            "| tsUtc | runId | tag | git | robothost_null cmd/s | robot_runner cmd/s | il2cpp_source 1k ticks/s | il2cpp_source 10k ticks/s |",
+            "|---|---|---|---|---:|---:|---:|---:|",
+            $end,
+            ""
+        ) -join $nl
+
+        $text = $text.TrimEnd() + ($nl + $nl) + $section
+    }
+
+    $runId = Try-Get { [string]$Record.runId }
+    if ([string]::IsNullOrWhiteSpace($runId))
+    {
+        return
+    }
+
+    if ($text -match [regex]::Escape("| $runId |"))
+    {
+        return
+    }
+
+    $tsUtc = Try-Get { [string]$Record.tsUtc }
+    if ([string]::IsNullOrWhiteSpace($tsUtc)) { $tsUtc = (Get-Date).ToUniversalTime().ToString("o") }
+
+    $tag = Try-Get { [string]$Record.tag }
+    $commit = Try-Get { [string]$Record.git.commit }
+    if (-not [string]::IsNullOrWhiteSpace($commit) -and $commit.Length -gt 7) { $commit = $commit.Substring(0, 7) }
+    $dirty = Try-Get { [bool]$Record.git.dirty }
+    if ($dirty) { $commit = "$commit*" }
+
+    $rhNull = Try-Get { [double]$Record.results.robothost_null.commands_per_s }
+    $rr = Try-Get { [double]$Record.results.robot_runner.commands_per_s }
+
+    $il2 = Try-Get { $Record.results.unity_il2cpp_source }
+    $il2_1k = $null
+    $il2_10k = $null
+    try
+    {
+        if ($il2 -is [System.Array])
+        {
+            $il2_1k = ($il2 | Where-Object bots -eq 1000 | Select-Object -First 1).ticks_per_s
+            $il2_10k = ($il2 | Where-Object bots -eq 10000 | Select-Object -First 1).ticks_per_s
+        }
+    }
+    catch
+    {
+    }
+
+    $fmt0 = { param($v) if ($null -eq $v) { "n/a" } else { "{0:0}" -f $v } }
+    $fmt2 = { param($v) if ($null -eq $v) { "n/a" } else { "{0:0.00}" -f $v } }
+
+    $row = @(
+        "| $tsUtc | $runId | $tag | $commit |",
+        " $(& $fmt0 $rhNull) |",
+        " $(& $fmt0 $rr) |",
+        " $(& $fmt2 $il2_1k) |",
+        " $(& $fmt2 $il2_10k) |"
+    ) -join ""
+
+    $replacement = $row + $nl + $end
+    $text = [regex]::Replace($text, [regex]::Escape($end), [System.Text.RegularExpressions.MatchEvaluator]{ param($m) $replacement }, 1)
+
+    Set-Content -Path $ReadmePath -Value $text -Encoding UTF8
+}
+
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 
 if ([string]::IsNullOrWhiteSpace($OutFile))
 {
     $OutFile = Join-Path $repoRoot "build\\perf_history.jsonl"
+}
+
+$readmePath = $null
+if (-not $NoReadme)
+{
+    if ([string]::IsNullOrWhiteSpace($ReadmeFile))
+    {
+        $readmePath = Join-Path $repoRoot "README.md"
+    }
+    else
+    {
+        $readmePath = (Resolve-Path $ReadmeFile).Path
+    }
 }
 
 $runId = (Get-Date -Format "yyyyMMdd_HHmmss")
@@ -653,3 +762,16 @@ $line = $record | ConvertTo-Json -Depth 32 -Compress
 Add-Content -Path $OutFile -Value $line -Encoding UTF8
 
 Write-Host "Appended: $OutFile"
+
+if ($readmePath)
+{
+    try
+    {
+        Update-PerfReadme -ReadmePath $readmePath -Record $record
+        Write-Host "Updated: $readmePath"
+    }
+    catch
+    {
+        Write-Warning ("Failed to update README perf table: " + $_.Exception.Message)
+    }
+}
