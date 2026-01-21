@@ -38,25 +38,38 @@ cmake --build build --config Release
 - 环境变量 `BRIDGE_CORE_DLL`：可指定源 `bridge_core.dll` 的绝对路径（优先级最高）
 - `DemoGameUnityRunner.Bots`：多实例（超过 `MaxBotsWithRendering` 会自动关闭渲染命令）
 
-## 性能测试（Unity Performance Test Framework）
+## 测试 / 性能（RuntimeUnitTestToolkit + IL2CPP 源码模式）
 
-已在工程内加入 `com.unity.test-framework.performance`，并提供 EditMode 性能用例：
+工程已引入 `com.cysharp.runtimeunittesttoolkit`，用于在 **Player** 下运行 NUnit 测试（可用于 Mono / IL2CPP）。
 
-- `BridgeDemoGame.Tests.BridgeDispatchPerformanceTests.TickAndDispatch_OneFrame`
+其中吞吐测试会输出类似：
 
-命令行运行（Windows / PowerShell）：
+- `##bridgeperf: mode=il2cpp_source ...`
+
+### IL2CPP（源码插件）跑测试
+
+命令行（Windows / PowerShell）：
 
 ```powershell
-& "C:\\Program Files\\Unity\\Hub\\Editor\\6000.0.40f1\\Editor\\Unity.exe" `
-  -batchmode -nographics -quit `
-  -projectPath "D:\\UGit\\UnityNativeScripting\\Tests\\unity" `
-  -runTests -testPlatform EditMode `
-  -testResults "D:\\UGit\\UnityNativeScripting\\build\\unity-editmode-test-results.xml" `
-  -perfTestResults "D:\\UGit\\UnityNativeScripting\\build\\unity-editmode-perf-results.json" `
-  -logFile "D:\\UGit\\UnityNativeScripting\\build\\unity-editmode-test.log"
+$unity = "C:\Program Files\Unity\Hub\Editor\6000.0.40f1\Editor\Unity.exe"
+$proj  = "D:\UGit\UnityNativeScripting\Tests\unity"
+$out   = "D:\UGit\UnityNativeScripting\build\ruttt_il2cpp\test.exe"
+
+& $unity -quit -batchmode -nographics `
+  -projectPath $proj `
+  -executeMethod Bridge.Core.Unity.Editor.BridgeCoreRuntimeUnitTestBuild.BuildUnitTest `
+  /ScriptBackend IL2CPP /BuildTarget StandaloneWindows64 /buildPath $out `
+  -logFile "D:\UGit\UnityNativeScripting\build\ruttt_il2cpp\build.log"
+
+& $out -batchmode -nographics -logFile "D:\UGit\UnityNativeScripting\build\ruttt_il2cpp\run.log"
 ```
+
+说明：
+
+- `BuildUnitTest` 会在 IL2CPP 下自动执行 `BridgeCore/Windows/Sync C++ Sources`，把 C++ 源码同步到 `Assets/Plugins/x86_64/BridgeCoreSource`，并在 Player Build 时编进 `GameAssembly.dll`。
+- 这些测试位于 `Assets/BridgeDemoGame/PlayModeTests/`（例如 `BridgeRuntimeSmokeTests` / `BridgeSourceModeThroughputTests`）。
 
 注意：
 
-- `-testPlatform` 在 Unity 6 下建议使用 `EditMode` / `PlayMode`（大小写匹配）。
-- 如果 `Tests/unity` 工程已在 Unity Editor 中打开，命令行跑测试会被锁定；请先关闭该工程的 Editor 实例。
+- 如果 `build/unity_il2cpp/BridgeDemoGame.exe`（或 unit test player）仍在运行，重建可能会因为文件被映射而失败；请先结束进程再 build。
+- 如果 `Tests/unity` 工程已在 Unity Editor 中打开，命令行 build 也可能被锁定；建议先关闭该工程的 Editor 实例。

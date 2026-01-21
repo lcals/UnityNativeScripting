@@ -10,6 +10,9 @@ namespace Bridge.Core
     internal static class BridgeNative
     {
 #if UNITY_EDITOR_WIN
+        // Windows Editor 下使用 “Copy-Then-Load + GetProcAddress” 模式：
+        // - 避免 Unity 自动加载/锁定固定 DLL 路径
+        // - 支持重编译后覆盖源 DLL，再热重载
         [DllImport("kernel32.dll", CharSet = CharSet.Ansi, ExactSpelling = true, SetLastError = true)]
         private static extern IntPtr GetProcAddress(IntPtr libraryHandle, string symbolName);
 
@@ -136,7 +139,12 @@ namespace Bridge.Core
             return s_pushCallCore(core, funcId, payload, payloadSize);
         }
 #else
+#if ENABLE_IL2CPP && !UNITY_EDITOR
+        // IL2CPP Player 下如果把 C++ 以“源码插件”编进 GameAssembly.dll，应使用 __Internal 走内部符号解析，避免运行时动态加载 bridge_core.dll。
+        private const string LibraryName = "__Internal";
+#else
         private const string LibraryName = "bridge_core";
+#endif
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern BridgeVersion Bridge_GetVersion();

@@ -2,6 +2,8 @@
 
 目标：在 Unity Editor（Windows）中使用 `bridge_core.dll` 跑起来，同时支持“重编译后覆盖 DLL”而不被 Windows 文件锁卡死；出包阶段再切换到更标准的插件/源码编译方案。
 
+> IL2CPP “源码插件编译进 GameAssembly.dll” 的细节与 `il2cppOutput` 解读见：`Core/docs/UNITY_IL2CPP_SOURCE_BUILD.md`。
+
 ## 背景：为什么会被锁
 
 Windows 下一个 DLL 被进程加载后，其文件会被锁定（不能覆盖/删除）。Unity Editor 在域重载、脚本重编译、迭代调试时经常需要替换原生 DLL，如果直接加载固定路径（例如 `Assets/Plugins/.../bridge_core.dll`），就会出现：

@@ -13,8 +13,14 @@ namespace Bridge.Core.Unity.Editor
 		//   /headless /ScriptBackend IL2CPP /BuildTarget StandaloneWindows64
 		public static void BuildUnitTest()
 		{
-			// Player 下依赖 bridge_core.dll，确保同步到 Assets/Plugins 并正确配置导入器
-			BridgeCoreWinSync.SyncForPlayer();
+			// 按构建后端选择模式：
+			// - IL2CPP：走“源码插件”模式（C++ 编进 GameAssembly.dll）
+			// - Mono2x：走“native dll 插件”模式（复制到 Assets/Plugins 供 Player 加载）
+			string backend = FindSlashOption(Environment.GetCommandLineArgs(), "ScriptBackend");
+			if (string.Equals(backend, "IL2CPP", StringComparison.OrdinalIgnoreCase))
+				BridgeCoreNativeSourceSync.SyncSourcesForIl2Cpp();
+			else
+				BridgeCoreWinSync.SyncForPlayer();
 
 #if UNITY_2021_2_OR_NEWER
 			// RuntimeUnitTestToolkit 的 /Headless 会走 Dedicated Server 子目标。
@@ -23,6 +29,17 @@ namespace Bridge.Core.Unity.Editor
 #endif
 
 			InvokeUnitTestBuilder();
+		}
+
+		private static string FindSlashOption(string[] args, string name)
+		{
+			string key = "/" + name;
+			for (int i = 0; i < args.Length - 1; i++)
+			{
+				if (string.Equals(args[i], key, StringComparison.OrdinalIgnoreCase))
+					return args[i + 1];
+			}
+			return null;
 		}
 
 		private static void InvokeUnitTestBuilder()
