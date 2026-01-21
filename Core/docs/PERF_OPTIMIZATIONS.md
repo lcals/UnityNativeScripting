@@ -13,7 +13,7 @@
 仓库统一用 `Tools/RunPerf.ps1`：
 
 ```powershell
-pwsh -NoProfile -ExecutionPolicy Bypass -File Tools/RunPerf.ps1 -UnityVersion 6000.0.40f1 -Tag "<your_tag>"
+pwsh -NoProfile -ExecutionPolicy Bypass -File Tools/RunPerf.ps1 -UnityVersion 6000.0.40f1 -UnityIl2cppRepeat 3 -Tag "<your_tag>"
 ```
 
 - 每次 run 的完整原始数据：`build/perf_history.jsonl`（不建议提交，只用于本机追溯/回归分析）
@@ -66,6 +66,24 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File Tools/RunPerf.ps1 -UnityVersion 60
 - 生成物：
   - `Tests/csharp/RobotHost/Generated/Bridge.AllCommandDispatcher.g.cs`
   - `Tests/unity/Assets/BridgeDemoGame/Generated/Bridge.AllCommandDispatcher.g.cs`
+
+### 3) IL2CPP 下遍历 `CommandStream[]`：用 `fixed` 读指针避免 `GetAt(...)`
+
+**引入**
+- git：`2772303`
+
+**现象（IL2CPP 输出）**
+- `streams[i]`（struct 数组取值）会生成 `GetAt(...)` 路径，并带边界检查与 struct 拷贝，在 10k bots 下会被放大。
+
+**改动**
+- 在批量帧循环里对 `CommandStream[] streams` 做一次 `fixed (CommandStream* streamsPtr = streams)`，用 `streamsPtr[i]` 读取。
+
+**位置**
+- `Tests/unity/Assets/BridgeDemoGame/PlayModeTests/BridgeSourceModeThroughputTests.cs`
+- `Tests/unity/Assets/BridgeDemoGame/PlayModeTests/BridgeDemoGame.PlayModeTests.asmdef`（开启 `allowUnsafeCode`）
+
+**效果**
+- IL2CPP 输出中 `streams[i]` 从 `GetAt(...)` 变为通过 `GetAddressAt(0)` 获取底层指针后直接索引读取（减少边界检查/拷贝开销）。
 
 ## 优化流程建议（只在提升时记录/提交）
 
