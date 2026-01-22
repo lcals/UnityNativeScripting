@@ -16,8 +16,6 @@ namespace Bridge.Core
 #endif
 
         [ThreadStatic] private static IntPtr[]? s_tickManyCorePtrs;
-        [ThreadStatic] private static IntPtr[]? s_tickManyOutPtrs;
-        [ThreadStatic] private static uint[]? s_tickManyOutLens;
 
         private IntPtr _handle;
 
@@ -75,7 +73,7 @@ namespace Bridge.Core
             if (count < 0)
                 throw new ArgumentOutOfRangeException(nameof(count));
 
-            EnsureTickManyArrays(count);
+            EnsureTickManyCorePtrs(count);
         }
 
         public static unsafe void TickManyAndGetCommandStreams(BridgeCore[] cores, float dt, CommandStream[] streams)
@@ -101,30 +99,18 @@ namespace Bridge.Core
                     corePtrs[i] = core._handle;
                 }
 
-                IntPtr* outPtrs = stackalloc IntPtr[count];
-                uint* outLens = stackalloc uint[count];
-
-                var result = BridgeNative.BridgeCore_TickManyAndGetCommandStreams(corePtrs, (uint)count, dt, outPtrs, outLens);
-                if (result != BridgeResult.Ok)
-                    throw new InvalidOperationException($"BridgeCore_TickManyAndGetCommandStreams failed: {result}");
-
-                fixed (CommandStream* dst = streams)
+                fixed (CommandStream* outStreams = streams)
                 {
-                    for (int i = 0; i < count; i++)
-                    {
-                        IntPtr ptr = outPtrs[i];
-                        uint len = outLens[i];
-                        dst[i] = (ptr == IntPtr.Zero || len == 0) ? default : new CommandStream(ptr, len);
-                    }
+                    var result = BridgeNative.BridgeCore_TickManyAndGetCommandStreams(corePtrs, (uint)count, dt, outStreams);
+                    if (result != BridgeResult.Ok)
+                        throw new InvalidOperationException($"BridgeCore_TickManyAndGetCommandStreams failed: {result}");
                 }
             }
             else
             {
-                EnsureTickManyArrays(count);
+                EnsureTickManyCorePtrs(count);
 
                 IntPtr[] corePtrsManaged = s_tickManyCorePtrs!;
-                IntPtr[] outPtrsManaged = s_tickManyOutPtrs!;
-                uint[] outLensManaged = s_tickManyOutLens!;
 
                 for (int i = 0; i < count; i++)
                 {
@@ -134,20 +120,11 @@ namespace Bridge.Core
                 }
 
                 fixed (IntPtr* corePtrs = corePtrsManaged)
-                fixed (IntPtr* outPtrs = outPtrsManaged)
-                fixed (uint* outLens = outLensManaged)
-                fixed (CommandStream* dst = streams)
+                fixed (CommandStream* outStreams = streams)
                 {
-                    var result = BridgeNative.BridgeCore_TickManyAndGetCommandStreams(corePtrs, (uint)count, dt, outPtrs, outLens);
+                    var result = BridgeNative.BridgeCore_TickManyAndGetCommandStreams(corePtrs, (uint)count, dt, outStreams);
                     if (result != BridgeResult.Ok)
                         throw new InvalidOperationException($"BridgeCore_TickManyAndGetCommandStreams failed: {result}");
-
-                    for (int i = 0; i < count; i++)
-                    {
-                        IntPtr ptr = outPtrs[i];
-                        uint len = outLens[i];
-                        dst[i] = (ptr == IntPtr.Zero || len == 0) ? default : new CommandStream(ptr, len);
-                    }
                 }
             }
         }
@@ -165,72 +142,19 @@ namespace Bridge.Core
             if (count == 0)
                 return;
 
-            if (count <= StackAllocMaxCount)
+            fixed (IntPtr* corePtrs = coreHandles)
+            fixed (CommandStream* outStreams = streams)
             {
-                fixed (IntPtr* corePtrs = coreHandles)
-                {
-                    IntPtr* outPtrs = stackalloc IntPtr[count];
-                    uint* outLens = stackalloc uint[count];
-
-                    var result = BridgeNative.BridgeCore_TickManyAndGetCommandStreams(corePtrs, (uint)count, dt, outPtrs, outLens);
-                    if (result != BridgeResult.Ok)
-                        throw new InvalidOperationException($"BridgeCore_TickManyAndGetCommandStreams failed: {result}");
-
-                    fixed (CommandStream* dst = streams)
-                    {
-                        for (int i = 0; i < count; i++)
-                        {
-                            IntPtr ptr = outPtrs[i];
-                            uint len = outLens[i];
-                            dst[i] = (ptr == IntPtr.Zero || len == 0) ? default : new CommandStream(ptr, len);
-                        }
-                    }
-                }
-            }
-            else
-            {
-                EnsureTickManyOutArrays(count);
-
-                IntPtr[] outPtrsManaged = s_tickManyOutPtrs!;
-                uint[] outLensManaged = s_tickManyOutLens!;
-
-                fixed (IntPtr* corePtrs = coreHandles)
-                fixed (IntPtr* outPtrs = outPtrsManaged)
-                fixed (uint* outLens = outLensManaged)
-                fixed (CommandStream* dst = streams)
-                {
-                    var result = BridgeNative.BridgeCore_TickManyAndGetCommandStreams(corePtrs, (uint)count, dt, outPtrs, outLens);
-                    if (result != BridgeResult.Ok)
-                        throw new InvalidOperationException($"BridgeCore_TickManyAndGetCommandStreams failed: {result}");
-
-                    for (int i = 0; i < count; i++)
-                    {
-                        IntPtr ptr = outPtrs[i];
-                        uint len = outLens[i];
-                        dst[i] = (ptr == IntPtr.Zero || len == 0) ? default : new CommandStream(ptr, len);
-                    }
-                }
+                var result = BridgeNative.BridgeCore_TickManyAndGetCommandStreams(corePtrs, (uint)count, dt, outStreams);
+                if (result != BridgeResult.Ok)
+                    throw new InvalidOperationException($"BridgeCore_TickManyAndGetCommandStreams failed: {result}");
             }
         }
 
-        private static void EnsureTickManyArrays(int count)
+        private static void EnsureTickManyCorePtrs(int count)
         {
             s_tickManyCorePtrs ??= new IntPtr[count];
-            s_tickManyOutPtrs ??= new IntPtr[count];
-            s_tickManyOutLens ??= new uint[count];
-
             if (s_tickManyCorePtrs.Length < count) s_tickManyCorePtrs = new IntPtr[count];
-            if (s_tickManyOutPtrs.Length < count) s_tickManyOutPtrs = new IntPtr[count];
-            if (s_tickManyOutLens.Length < count) s_tickManyOutLens = new uint[count];
-        }
-
-        private static void EnsureTickManyOutArrays(int count)
-        {
-            s_tickManyOutPtrs ??= new IntPtr[count];
-            s_tickManyOutLens ??= new uint[count];
-
-            if (s_tickManyOutPtrs.Length < count) s_tickManyOutPtrs = new IntPtr[count];
-            if (s_tickManyOutLens.Length < count) s_tickManyOutLens = new uint[count];
         }
 
         /// <summary>

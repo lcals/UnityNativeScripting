@@ -36,8 +36,7 @@ namespace Bridge.Core
             IntPtr* cores,
             uint count,
             float dt,
-            IntPtr* outPtrs,
-            uint* outLens);
+            CommandStream* outStreams);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private delegate BridgeResult BridgeCore_GetCommandStreamDelegate(IntPtr core, out IntPtr ptr, out uint len);
@@ -120,11 +119,10 @@ namespace Bridge.Core
             IntPtr* cores,
             uint count,
             float dt,
-            IntPtr* outPtrs,
-            uint* outLens)
+            CommandStream* outStreams)
         {
             EnsureBound();
-            return s_tickManyAndGetCommandStreams(cores, count, dt, outPtrs, outLens);
+            return s_tickManyAndGetCommandStreams(cores, count, dt, outStreams);
         }
 
         internal static BridgeResult BridgeCore_GetCommandStream(IntPtr core, out IntPtr ptr, out uint len)
@@ -170,8 +168,7 @@ namespace Bridge.Core
             IntPtr* cores,
             uint count,
             float dt,
-            IntPtr* outPtrs,
-            uint* outLens);
+            CommandStream* outStreams);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern BridgeResult BridgeCore_GetCommandStream(

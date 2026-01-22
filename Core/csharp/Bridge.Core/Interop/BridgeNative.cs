@@ -31,8 +31,7 @@ namespace Bridge.Core
             IntPtr* cores,
             uint count,
             float dt,
-            IntPtr* outPtrs,
-            uint* outLens);
+            CommandStream* outStreams);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern BridgeResult BridgeCore_GetCommandStream(

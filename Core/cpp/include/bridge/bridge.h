@@ -170,6 +170,17 @@ typedef struct BridgeCmdCallHost
   uint32_t func_id;
 } BridgeCmdCallHost;
 
+// Command stream view（Core -> Host）：
+// - 仅包含 ptr+len，指针由 Core 持有。
+// - 只保证在下一次 Tick（或 Destroy）前有效。
+typedef struct BridgeCommandStream
+{
+  const void* ptr;
+  uint32_t len;
+  // 预留字段（用于未来 ABI 扩展），必须为 0。
+  uint32_t reserved0;
+} BridgeCommandStream;
+
 BRIDGE_API void BRIDGE_CALL BridgeCore_Tick(BridgeCore* core, float dt);
 
 // 组合调用：Tick + GetCommandStream（减少 Host 侧 P/Invoke 次数）。
@@ -183,14 +194,13 @@ BRIDGE_API BridgeResult BRIDGE_CALL BridgeCore_TickAndGetCommandStream(
   uint32_t* out_len);
 
 // 批量 Tick + 获取 command streams（机器人/压测用）。
-// - cores / out_ptrs / out_lens 均为长度为 count 的数组指针。
-// - 成功返回后：out_ptrs[i] / out_lens[i] 为 cores[i] 本帧的 stream。
+// - cores / out_streams 均为长度为 count 的数组指针。
+// - 成功返回后：out_streams[i] 为 cores[i] 本帧的 stream。
 BRIDGE_API BridgeResult BRIDGE_CALL BridgeCore_TickManyAndGetCommandStreams(
   BridgeCore** cores,
   uint32_t count,
   float dt,
-  const void** out_ptrs,
-  uint32_t* out_lens);
+  BridgeCommandStream* out_streams);
 
 // 返回最近一次 BridgeCore_Tick 生成的 command stream（连续字节流）指针。
 // 返回的内存由 Core 持有，只保证在下一次 BridgeCore_Tick（或 BridgeCore_Destroy）前有效。
