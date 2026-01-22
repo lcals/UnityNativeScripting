@@ -42,6 +42,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File Tools/RunPerf.ps1 -UnityVersion 60
 
 **改动**
 - 在 `TickManyAndGetCommandStreams` 写回阶段，改为 `fixed (CommandStream* dst = streams)`，用 `dst[i] = ...` 直接写入。
+- 后续：`0b529e2` 进一步把 “写回阶段” 下沉到 native（直接写 `CommandStream[]`），避免 Host 侧组合/拷贝；见记录 7)。
 
 **位置**
 - `Core/csharp/Bridge.Core/BridgeCore.cs`
@@ -174,6 +175,35 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File Tools/RunPerf.ps1 -UnityVersion 60
 **效果（本机）**
 - `total_bytes`：10k*3000 从约 `1,200,000,000` 降到 `960,000,000`（-20%）
 - Unity IL2CPP Source：10k `ticks/s` 约 `34.17M` → `38.64M`（明显提升，见对应 runId）
+
+### 7) TickMany：native 直接写入 `CommandStream[]`（去掉 out_ptr/out_len 组合；破坏性 ABI 变更）
+
+**引入**
+- git：`0b529e2`
+- 验证：Unity `6000.0.40f1`
+  - tag=`tickmany_stream_direct_clean_r3`；runId=`20260122_111835`（repeat=3）
+- 对比：tag=`post_4bfba43_shrink_header`；runId=`20260121_213218`（repeat=3）
+
+**现象（IL2CPP 输出）**
+- 旧的批量 Tick ABI 需要 Core 输出两段数组（`out_ptrs`/`out_lens`），Host 再把它们逐项组合成 `CommandStream[]`。
+- 在 IL2CPP 下这会生成额外的组合循环与数组访问路径（容易出现 `SetAt`/边界检查/struct 拷贝），在 1k/10k bots 下被放大。
+
+**改动**
+- C ABI 改为：`BridgeCore_TickManyAndGetCommandStreams(..., BridgeCommandStream* out_streams)`，由 native 直接填充 `{ptr,len}`。
+- C# 侧让 `CommandStream` 与 `BridgeCommandStream` 内存布局一致（新增 `_reserved0`），并把 `streams` 直接固定后传入 native（不再有 “out_ptr/out_len → streams” 的组合阶段）。
+
+**位置**
+- C ABI：`Core/cpp/include/bridge/bridge.h`、`Core/cpp/src/api/bridge_api.cpp`
+- C# interop：
+  - `Core/csharp/Bridge.Core/CommandStream.cs`
+  - `Core/csharp/Bridge.Core/Interop/BridgeNative.cs`
+  - `Core/csharp/Bridge.Core/BridgeCore.cs`
+  - `Packages/com.unitynativescripting.bridgecore/Runtime/Bridge.Core/CommandStream.cs`
+  - `Packages/com.unitynativescripting.bridgecore/Runtime/Bridge.Core/Interop/BridgeNative.cs`
+  - `Packages/com.unitynativescripting.bridgecore/Runtime/Bridge.Core/BridgeCore.cs`
+
+**效果**
+- Unity IL2CPP Source 的 `ticks/s`（1k/10k）有稳定提升（见 `README.md` 性能摘要表与对应 runId）。
 
 ## 优化流程建议（只在提升时记录/提交）
 
