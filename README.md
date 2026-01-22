@@ -82,6 +82,7 @@ powershell -ExecutionPolicy Bypass -File Tools/RunPerf.ps1 -Bots 1000 -Frames 30
 <!-- PERF_TABLE_START -->
 | tsUtc | runId | tag | git | robothost_null cmd/s | robot_runner cmd/s | robot_runner ticks/s | il2cpp_source 1k ticks/s | il2cpp_source 10k ticks/s |
 |---|---|---|---|---:|---:|---:|---:|---:|
+| 2026-01-22T03:19:16.3595605Z | 20260122_111835 | tickmany_stream_direct_clean_r3 | 0b529e2 | 28172609 | 66324333 | 66666666.67 | 66351247.58 | 43464276.71 |
 | 2026-01-21T13:33:27.2531131Z | 20260121_213218 | post_4bfba43_shrink_header | 4bfba43 | 24956397 | 82791134 | 83333333.33 | 53676144.98 | 38640229.71 |
 | 2026-01-21T13:19:57.4007236Z | 20260121_211854 | probe_9219989_stable_window | 9219989 | 24159430 | 80006607 | 78947368.42 | 49798159.76 | 34168195.22 |
 | 2026-01-21T13:15:08.8643720Z | 20260121_211406 | post_912e0e5_unchecked_now | 326156a | 25574750 | 74101492 | 73170731.71 | 56039152.69 | 37078326.73 |
@@ -101,6 +102,7 @@ powershell -ExecutionPolicy Bypass -File Tools/RunPerf.ps1 -Bots 1000 -Frames 30
 | 2026-01-21T09:46:22.1895560Z | 20260121_174537 | post_23e79d6 | 23e79d6 | 23447208 | 58632532 | 58823529.41 | 50646588.11 | 32289520.76 |
 | 2026-01-21T09:02:21.8370259Z | 20260121_170122 | post_commit | 46c54af | 22331042 | 60740046 | 61224489.80 | 47947066.44 | 32652492.58 |
 <!-- PERF_TABLE_END -->
+
 
 
 
